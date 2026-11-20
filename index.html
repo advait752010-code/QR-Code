@@ -1,566 +1,1073 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Spill-Proof QR</title>
-<meta name="description" content="Spill coffee on a live QR code and watch Reed-Solomon error correction (running in Python in your browser) repair it.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<style>
-/*
-VOICE: a curious café-table experiment, plain words, one surprise at a time.
-IDEA: the table-tent QR code at a café, and the phone that scans it after someone spills on it.
-PICTURE: the live QR code itself, large, paintable with coffee, beside the "phone screen" verdict.
-COLOUR and TYPE: espresso ground band, white paper card, scanner green / stop red as the only accents; Archivo + Inter + JetBrains Mono for bytes.
-LAYOUT: band with title, then code (left) + scanner (right), then challenges, then deeper sections.
-*/
-:root{color-scheme:light dark;
---bg:light-dark(#f4efe9,#14100d);--card:light-dark(#ffffff,#201a16);--ink:light-dark(#1d1612,#f3ece6);--soft:light-dark(#6b5d53,#b5a69a);
---line:light-dark(#e5dcd3,#3a302a);--espresso:#2b1a11;--crema:#c8935a;--ok:light-dark(#0f8a46,#3ccf7f);--okbg:light-dark(#e3f6ea,#123322);
---bad:light-dark(#c62f35,#ff6b6f);--badbg:light-dark(#fde7e7,#3a1517);--warn:light-dark(#a35a00,#ffb547);
---data:#3e63dd;--ec:#e8590c;--chip:light-dark(#f1ebe5,#2a221d)}
-:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
-*{box-sizing:border-box;min-width:0}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:clip}
-h1,h2,h3{font-family:Archivo,Inter,sans-serif;line-height:1.08;text-wrap:balance;margin:0}
-.band{padding:clamp(22px,3.5vw,48px) max(4vw,16px)}
-.wrap{max-width:1240px;margin:0 auto}
-header.band{background:var(--espresso);color:#f6eee6;padding-bottom:clamp(70px,8vw,110px)}
-header h1{font-size:clamp(30px,4.6vw,50px);font-weight:800;max-width:20ch}
-header p{max-width:62ch;color:#e2d3c5;margin:.7em 0 0;font-size:17px}
-header .how{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:18px;font-size:15px;color:#f6eee6}
-header .how b{color:var(--crema)}
-main{margin-top:clamp(-90px,-7vw,-56px)}
-.app{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,1fr);gap:20px;align-items:start}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:clamp(14px,2vw,22px);box-shadow:0 10px 30px rgba(30,15,5,.12)}
-label.small,.lbl{font-size:13px;color:var(--soft);font-weight:600;display:block;margin-bottom:6px}
-input[type=text]{width:100%;font:16px Inter,sans-serif;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
-input:focus-visible,button:focus-visible{outline:3px solid var(--crema);outline-offset:2px}
-.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:11px;overflow:hidden}
-.seg button{border:0;border-right:1px solid var(--line);border-radius:0}
-.seg button:last-child{border-right:0}
-button{font:600 14px Inter,sans-serif;min-height:44px;padding:8px 13px;border-radius:10px;border:1px solid var(--line);background:var(--chip);color:var(--ink);cursor:pointer}
-button:hover{filter:brightness(.97)}
-button.on{background:var(--espresso);color:#fff;border-color:var(--espresso)}
-:root[data-theme=dark] button.on{background:var(--crema);color:#1b120c}
-@media (prefers-color-scheme:dark){:root:not([data-theme=light]) button.on{background:var(--crema);color:#1b120c}}
-.lvl small{display:block;font-weight:500;font-size:12px;opacity:.8}
-.qrbox{position:relative;margin:14px 0 10px;background:#fff;border-radius:12px;border:1px solid var(--line)}
-#qr{display:block;width:100%;aspect-ratio:1;touch-action:none;cursor:crosshair;border-radius:12px}
-#hover{font:13px 'JetBrains Mono',monospace;color:var(--soft);min-height:20px}
-.tools{display:grid;gap:10px;margin-top:8px}
-.brush{display:flex;align-items:center;gap:10px;font-size:14px}
-input[type=range]{accent-color:var(--crema);width:120px;height:30px}
-.toggles{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:14px}
-.toggles label{display:flex;gap:6px;align-items:center;cursor:pointer;min-height:32px}
-.legend{display:none;flex-wrap:wrap;gap:4px 12px;font-size:13px;color:var(--soft)}
-.legend.show{display:flex}
-.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
-/* scanner */
-.phone{border-radius:16px;padding:16px;margin-bottom:14px;border:2px solid var(--line)}
-.phone.ok{background:var(--okbg);border-color:var(--ok)}
-.phone.bad{background:var(--badbg);border-color:var(--bad)}
-.verdict{font:800 clamp(24px,3vw,32px)/1.1 Archivo,sans-serif}
-.phone.ok .verdict{color:var(--ok)}.phone.bad .verdict{color:var(--bad)}
-.decoded{font:600 16px 'JetBrains Mono',monospace;margin-top:8px;overflow-wrap:anywhere;padding:8px 10px;background:var(--card);border-radius:8px;border:1px solid var(--line)}
-.why{margin:10px 0 0;font-size:15px}
-.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
-.stat{background:var(--chip);border-radius:10px;padding:8px 10px}
-.stat b{display:block;font:800 22px Archivo,sans-serif}
-.stat span{font-size:12.5px;color:var(--soft)}
-.pipe{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 14px}
-.pipe div{flex:1 1 90px;font-size:12.5px;font-weight:600;padding:7px 8px;border-radius:8px;background:var(--chip);color:var(--soft);text-align:center}
-.pipe .g{background:var(--okbg);color:var(--ok)}.pipe .r{background:var(--badbg);color:var(--bad)}
-.blk{display:grid;grid-template-columns:62px minmax(0,1fr) auto;gap:8px;align-items:center;font-size:13px;margin:5px 0}
-.cells{display:flex;gap:2px;flex-wrap:wrap}
-.cells i{width:14px;height:14px;border-radius:3px;background:var(--chip);border:1px solid var(--line)}
-.cells i.f{background:var(--ok);border-color:var(--ok)}
-.cells i.x{background:var(--bad);border-color:var(--bad)}
-.cells i.h{background:var(--soft);border-color:var(--soft)}
-.blk .n{font-family:'JetBrains Mono',monospace;color:var(--soft);white-space:nowrap}
-.jsqr{font-size:13.5px;color:var(--soft);margin-top:12px;border-top:1px dashed var(--line);padding-top:10px}
-/* challenges */
-.challenges h2,.deep h2{font-size:clamp(22px,2.6vw,28px);margin-bottom:10px}
-.ch{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
-.ch li{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--card);position:relative}
-.ch li b{display:block;font-size:15px;margin-bottom:3px;padding-right:28px}
-.ch li span{font-size:14px;color:var(--soft)}
-.ch li::after{content:"";position:absolute;right:12px;top:12px;width:20px;height:20px;border-radius:50%;border:2px solid var(--line)}
-.ch li.done{border-color:var(--ok);background:var(--okbg)}
-.ch li.done::after{background:var(--ok);border-color:var(--ok);box-shadow:inset 0 0 0 4px var(--okbg)}
-.insight{margin-top:14px;padding:16px 18px;border-radius:14px;background:var(--espresso);color:#f6eee6;font-size:16.5px}
-.insight b{color:var(--crema)}
-/* deep */
-details{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-top:12px}
-summary{cursor:pointer;padding:16px 18px;font:700 18px Archivo,sans-serif;min-height:44px}
-details>div{padding:0 18px 18px}
-details p{max-width:75ch}
-.bytes{display:flex;flex-wrap:wrap;gap:3px;margin:6px 0 4px}
-.bytes span{font:12px 'JetBrains Mono',monospace;padding:3px 4px;border-radius:4px;border:1.5px solid transparent;color:#fff}
-.bytes .d{background:var(--data)}.bytes .e{background:var(--ec)}
-.bytes .hit{border-color:var(--bad);box-shadow:0 0 0 1px var(--bad)}
-.bytes .fx{outline:2px solid var(--ok);outline-offset:1px}
-.synd{font:12px 'JetBrains Mono',monospace;color:var(--soft);overflow-wrap:anywhere}
-.synd em{color:var(--bad);font-style:normal;font-weight:600}
-.masks{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px;margin-top:10px}
-.mk{border:2px solid var(--line);border-radius:10px;padding:6px;background:var(--card);cursor:pointer;text-align:center;font-size:12.5px;min-height:auto}
-.mk canvas{width:100%;aspect-ratio:1;display:block;border-radius:4px;background:#fff;image-rendering:pixelated}
-.mk.sel{border-color:var(--crema)}
-.mk.best b{color:var(--ok)}
-.mono{font-family:'JetBrains Mono',monospace;font-size:13.5px;overflow-wrap:anywhere}
-table{border-collapse:collapse;font-size:14px}td,th{padding:5px 10px;border-bottom:1px solid var(--line);text-align:left}td.r{text-align:right;font-family:'JetBrains Mono',monospace}
-footer{color:var(--soft);font-size:14px}
-footer a{color:inherit}
-#loader{position:fixed;inset:0;background:var(--espresso);color:#f6eee6;display:grid;place-items:center;z-index:9;text-align:center;padding:24px}
-#loader .cup{width:64px;height:64px;border-radius:50%;border:6px solid #5a3a26;border-top-color:var(--crema);margin:0 auto 18px;animation:spin 1s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){#loader .cup{animation:none}}
-.err{color:var(--bad);font-size:14px;min-height:0}
-#mini{display:none}
-@media(max-width:900px){.app{grid-template-columns:minmax(0,1fr)}
-#mini{display:block;position:fixed;left:12px;right:12px;bottom:12px;z-index:5;padding:10px 14px;border-radius:12px;font:700 15px Inter,sans-serif;color:#fff;box-shadow:0 6px 20px rgba(0,0,0,.3);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-#mini.ok{background:#0f8a46}#mini.bad{background:#c62f35}body{padding-bottom:64px}}
-@media(max-width:600px){.stats b{font-size:18px}.blk{grid-template-columns:52px minmax(0,1fr)}.blk .n{grid-column:2}}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spill-Proof QR — Interactive Reed-Solomon Explorer</title>
+  <meta name="description" content="Spill coffee on a live QR code and watch Reed-Solomon error correction (running in Python in your browser) repair it.">
+  
+  <!-- Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          boxShadow: {
+            'soft': '0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.04)',
+            'card': '0 4px 16px -2px rgba(15, 23, 42, 0.05), 0 1px 3px -1px rgba(15, 23, 42, 0.03)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Custom subtle range slider */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 6px;
+      border-radius: 999px;
+      background: #e2e8f0;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 16px;
+      width: 16px;
+      border-radius: 50%;
+      background: #0f172a;
+      margin-top: -5px;
+      border: 2px solid #ffffff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      transition: transform 0.1s ease;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.12);
+    }
+    /* Smooth details marker hiding */
+    details > summary { list-style: none; }
+    details > summary::-webkit-details-marker { display: none; }
+    details[open] summary .chev { transform: rotate(180deg); }
+    
+    /* Byte badge styling */
+    .byte-chip {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      line-height: 1;
+      padding: 4px 5px;
+      border-radius: 4px;
+      border: 1.5px solid transparent;
+      color: #fff;
+      transition: transform 0.1s ease;
+    }
+    .byte-chip:hover { transform: translateY(-1px); }
+    .byte-d { background-color: #4f46e5; } /* Indigo-600 */
+    .byte-e { background-color: #d97706; } /* Amber-600 */
+    .byte-hit { border-color: #e11d48; box-shadow: 0 0 0 1px #e11d48; }
+    .byte-fx { outline: 2px solid #10b981; outline-offset: 1px; }
+
+    /* Challenge completion state */
+    .ch-card.done {
+      background-color: #ecfdf5;
+      border-color: #a7f3d0;
+    }
+    .ch-card.done .ch-check {
+      background-color: #10b981;
+      border-color: #10b981;
+      color: #ffffff;
+    }
+  </style>
 </head>
-<body>
-<div id="loader"><div><div class="cup"></div><h2 style="font-size:22px">Brewing the Python engine…</h2><p style="color:#e2d3c5;max-width:42ch">The QR encoder and the error-correcting decoder are written in Python and run inside your browser (Pyodide). First load takes a few seconds.</p><p id="loadErr" class="err"></p></div></div>
+<body class="bg-slate-50 text-slate-900 selection:bg-indigo-100 selection:text-indigo-900 pb-16 md:pb-8">
 
-<header class="band"><div class="wrap">
-  <h1>Spill coffee on a QR code. Why does it still scan?</h1>
-  <p>A QR code isn't just your message drawn as squares. A big part of it is <b style="color:var(--crema)">spare information computed from your message</b>, so a phone can work out which squares are wrong, and what they should have been, without being told where the damage is.</p>
-  <div class="how"><span><b>1.</b> Type a message</span><span><b>2.</b> Drag on the code to spill coffee on it</span><span><b>3.</b> Watch the scanner repair it, until it can't</span></div>
-</div></header>
-
-<main class="band" style="padding-top:0"><div class="wrap">
-<div class="app">
-  <section class="card" aria-label="QR code you can damage">
-    <label class="small" for="msg">Your message (a web address works)</label>
-    <input type="text" id="msg" maxlength="98" value="https://example.com/menu?table=12" autocomplete="off" spellcheck="false">
-    <div id="encErr" class="err"></div>
-    <div class="lbl" style="margin-top:12px">How much spare repair data to add (error-correction level)</div>
-    <div class="seg" id="levels" role="group" aria-label="Error correction level">
-      <button class="lvl" data-l="L">L<small>~7% repair</small></button>
-      <button class="lvl" data-l="M">M<small>~15% repair</small></button>
-      <button class="lvl" data-l="Q">Q<small>~25% repair</small></button>
-      <button class="lvl" data-l="H">H<small>~30% repair</small></button>
+  <!-- Pyodide Loading Overlay -->
+  <div id="loader" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-sm flex items-center justify-center p-6 text-center">
+    <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl">
+      <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center mx-auto mb-5">
+        <i data-lucide="cpu" class="w-6 h-6 text-indigo-400 animate-pulse"></i>
+      </div>
+      <h2 class="text-lg font-semibold text-white tracking-tight">Initializing Python Engine…</h2>
+      <p class="text-sm text-slate-400 mt-2 leading-relaxed">
+        Loading our from-scratch Galois Field &amp; Reed–Solomon decoder (<code class="text-slate-300 font-mono text-xs">qr_engine.py</code>) inside your browser via WebAssembly.
+      </p>
+      <div class="mt-5 h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+        <div class="h-full bg-indigo-500 rounded-full w-2/3 animate-pulse"></div>
+      </div>
+      <p id="loadErr" class="text-xs text-rose-400 mt-3 font-medium"></p>
     </div>
-    <div class="qrbox"><canvas id="qr" width="660" height="660" aria-label="QR code. Drag to paint damage on it."></canvas></div>
-    <div id="hover">Hover a square to see what it is</div>
-    <div class="tools">
-      <div class="row">
-        <div class="seg" id="toolSeg" role="group" aria-label="Brush">
-          <button data-t="coffee" class="on">Coffee (dark)</button>
-          <button data-t="white">White-out</button>
-          <button data-t="repair">Repair</button>
+  </div>
+
+  <!-- Top Navigation / Hero Band -->
+  <header class="bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10">
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+        <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-indigo-50 border border-indigo-200/80 text-indigo-700 text-xs font-medium">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+          <span>Interactive Mechanism Explorer · GF(2⁸) Reed–Solomon</span>
         </div>
-        <div class="brush"><label for="bsize">Brush</label><input type="range" id="bsize" min="1" max="5" value="2"></div>
+        <a href="qr_engine.py" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/70 px-3 py-1.5 rounded-lg transition">
+          <i data-lucide="code-2" class="w-3.5 h-3.5"></i>
+          <span>Inspect qr_engine.py</span>
+        </a>
       </div>
-      <div class="row">
-        <button id="pSpeck">Scatter 8% speckles</button>
-        <button id="pBlob">Same 8% as one blob</button>
-        <button id="pLogo">Stick a logo on it</button>
-        <button id="pCorner">Scratch one corner</button>
-        <button id="pReset">Clean it</button>
-      </div>
-      <div class="toggles">
-        <label><input type="checkbox" id="oFixed" checked> Show repaired bytes</label>
-        <label><input type="checkbox" id="oAnat"> Show anatomy</label>
-        <label><input type="checkbox" id="oBytes"> Show byte boundaries</label>
-      </div>
-      <div class="legend" id="legend">
-        <span><i style="background:#e5484d"></i>Finder (locate)</span><span><i style="background:#8e4ec6"></i>Timing</span>
-        <span><i style="background:#d6409f"></i>Alignment</span><span><i style="background:#f5a524"></i>Format / version info</span>
-        <span><i style="background:var(--data)"></i>Your message bytes</span><span><i style="background:var(--ec)"></i>Repair (error-correction) bytes</span>
+
+      <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 max-w-3xl">
+        Spill coffee on a QR code. Why does it still scan?
+      </h1>
+      <p class="mt-3 text-base text-slate-600 max-w-3xl leading-relaxed">
+        A QR code isn't just your text drawn as squares. Up to 30% of it is <span class="font-semibold text-slate-900">redundant polynomial parity data</span>, letting a scanner locate damaged bytes and algebraically reconstruct what they used to be—without being told where the spill happened.
+      </p>
+
+      <!-- 3-Step Quick Guide Pills -->
+      <div class="mt-6 flex flex-wrap items-center gap-3 text-xs font-medium text-slate-700">
+        <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+          <span class="w-5 h-5 rounded-md bg-slate-900 text-white flex items-center justify-center font-mono text-[11px]">1</span>
+          <span>Enter a message or URL</span>
+        </div>
+        <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-slate-400 hidden sm:block"></i>
+        <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+          <span class="w-5 h-5 rounded-md bg-slate-900 text-white flex items-center justify-center font-mono text-[11px]">2</span>
+          <span>Drag across the code to spill coffee</span>
+        </div>
+        <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-slate-400 hidden sm:block"></i>
+        <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+          <span class="w-5 h-5 rounded-md bg-slate-900 text-white flex items-center justify-center font-mono text-[11px]">3</span>
+          <span>Watch Reed–Solomon repair it until its budget breaks</span>
+        </div>
       </div>
     </div>
-  </section>
+  </header>
 
-  <section class="card" aria-live="polite" aria-label="Scanner result">
-    <div class="lbl">What a phone scanner gets</div>
-    <div class="phone" id="phone"><div class="verdict" id="verdict">…</div><div class="decoded" id="decoded"></div><p class="why" id="why"></p></div>
-    <div class="pipe" id="pipe"></div>
-    <div class="stats">
-      <div class="stat"><b id="sCover">0%</b><span>of the code covered</span></div>
-      <div class="stat"><b id="sBytes">0</b><span>bytes damaged</span></div>
-      <div class="stat"><b id="sBest">0%</b><span>most coverage survived at this level</span></div>
+  <!-- Main Workspace -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+      <!-- Left Column: Interactive QR Canvas & Controls (6 cols) -->
+      <section class="lg:col-span-6 bg-white rounded-xl border border-slate-200 shadow-card p-6" aria-label="QR code canvas">
+        <!-- Message Input -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label for="msg" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Payload Message</label>
+            <span class="text-xs text-slate-400 font-mono">UTF-8 Byte Mode</span>
+          </div>
+          <div class="relative">
+            <input type="text" id="msg" maxlength="98" value="https://example.com/menu?table=12" autocomplete="off" spellcheck="false"
+              class="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 shadow-soft placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition">
+          </div>
+          <div id="encErr" class="text-xs text-rose-600 font-medium mt-1.5"></div>
+        </div>
+
+        <!-- Error Correction Level Selector -->
+        <div class="mt-5">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Error Correction Level (Redundancy)</span>
+          </div>
+          <div id="levels" role="group" aria-label="Error correction level" class="grid grid-cols-4 gap-2">
+            <button data-l="L" class="lvl-btn flex flex-col items-center justify-center py-2 px-2 rounded-lg border border-slate-200 bg-slate-50/70 hover:bg-slate-100 text-slate-700 transition cursor-pointer">
+              <span class="text-sm font-bold">L</span>
+              <span class="text-[11px] text-slate-500">~7% repair</span>
+            </button>
+            <button data-l="M" class="lvl-btn flex flex-col items-center justify-center py-2 px-2 rounded-lg border border-slate-200 bg-slate-50/70 hover:bg-slate-100 text-slate-700 transition cursor-pointer">
+              <span class="text-sm font-bold">M</span>
+              <span class="text-[11px] text-slate-500">~15% repair</span>
+            </button>
+            <button data-l="Q" class="lvl-btn flex flex-col items-center justify-center py-2 px-2 rounded-lg border border-slate-200 bg-slate-50/70 hover:bg-slate-100 text-slate-700 transition cursor-pointer">
+              <span class="text-sm font-bold">Q</span>
+              <span class="text-[11px] text-slate-500">~25% repair</span>
+            </button>
+            <button data-l="H" class="lvl-btn flex flex-col items-center justify-center py-2 px-2 rounded-lg border border-slate-200 bg-slate-50/70 hover:bg-slate-100 text-slate-700 transition cursor-pointer">
+              <span class="text-sm font-bold">H</span>
+              <span class="text-[11px] text-slate-500">~30% repair</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- QR Canvas Wrapper -->
+        <div class="mt-5 relative bg-white rounded-xl border border-slate-200 p-2 shadow-soft">
+          <canvas id="qr" width="660" height="660" aria-label="QR code. Drag to paint damage on it."
+            class="block w-full aspect-square rounded-lg cursor-crosshair touch-none"></canvas>
+        </div>
+
+        <!-- Coordinate & Byte Inspector Bar -->
+        <div class="mt-2.5 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200/80 text-xs font-mono text-slate-600 min-h-[32px]">
+          <i data-lucide="crosshair" class="w-3.5 h-3.5 text-slate-400 shrink-0"></i>
+          <span id="hover" class="truncate">Hover any square to inspect its role or byte index</span>
+        </div>
+
+        <!-- Damage Brush & Presets Toolbar -->
+        <div class="mt-5 pt-5 border-t border-slate-100 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <!-- Brush Segmented Control -->
+            <div id="toolSeg" role="group" aria-label="Brush" class="inline-flex rounded-lg bg-slate-100 p-1 border border-slate-200/80">
+              <button data-t="coffee" class="tool-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer bg-white text-slate-900 shadow-soft">
+                <i data-lucide="coffee" class="w-3.5 h-3.5 text-amber-800"></i>
+                <span>Coffee (dark)</span>
+              </button>
+              <button data-t="white" class="tool-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer text-slate-600 hover:text-slate-900">
+                <i data-lucide="eraser" class="w-3.5 h-3.5"></i>
+                <span>White-out</span>
+              </button>
+              <button data-t="repair" class="tool-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer text-slate-600 hover:text-slate-900">
+                <i data-lucide="paintbrush" class="w-3.5 h-3.5 text-emerald-600"></i>
+                <span>Clean</span>
+              </button>
+            </div>
+
+            <!-- Brush Size Slider -->
+            <div class="flex items-center gap-2.5">
+              <label for="bsize" class="text-xs font-medium text-slate-600">Brush</label>
+              <input type="range" id="bsize" min="1" max="5" value="2" class="w-24">
+            </div>
+          </div>
+
+          <!-- Quick Damage Presets -->
+          <div>
+            <span class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Damage Scenarios</span>
+            <div class="flex flex-wrap gap-2">
+              <button id="pSpeck" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 shadow-soft transition cursor-pointer">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-slate-400"></i>
+                <span>Scatter 8% speckles</span>
+              </button>
+              <button id="pBlob" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 shadow-soft transition cursor-pointer">
+                <i data-lucide="circle-dot" class="w-3.5 h-3.5 text-slate-400"></i>
+                <span>Same 8% as one blob</span>
+              </button>
+              <button id="pLogo" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 shadow-soft transition cursor-pointer">
+                <i data-lucide="sticker" class="w-3.5 h-3.5 text-slate-400"></i>
+                <span>Stick a logo on it</span>
+              </button>
+              <button id="pCorner" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 shadow-soft transition cursor-pointer">
+                <i data-lucide="scan" class="w-3.5 h-3.5 text-rose-500"></i>
+                <span>Scratch one corner</span>
+              </button>
+              <button id="pReset" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-100 hover:bg-slate-200/70 text-xs font-semibold text-slate-700 transition cursor-pointer ml-auto">
+                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                <span>Reset</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Visual Overlays -->
+          <div class="pt-2 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-medium text-slate-700">
+            <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" id="oFixed" checked class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+              <span>Highlight repaired bytes</span>
+            </label>
+            <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" id="oAnat" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+              <span>Anatomy overlay</span>
+            </label>
+            <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" id="oBytes" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+              <span>Byte boundaries</span>
+            </label>
+          </div>
+
+          <!-- Anatomy Legend (Shown when oAnat is checked) -->
+          <div id="legend" class="hidden flex-wrap gap-x-4 gap-y-1.5 p-3 rounded-lg bg-slate-50 border border-slate-200/80 text-xs text-slate-600">
+            <span class="inline-flex items-center gap-1.5"><i class="w-2.5 h-2.5 rounded-xs bg-[#e5484d]"></i>Finder</span>
+            <span class="inline-flex items-center gap-1.5"><i class="w-2.5 h-2.5 rounded-xs bg-[#8e4ec6]"></i>Timing</span>
+            <span class="inline-flex items-center gap-1.5"><i class="w-2.5 h-2.5 rounded-xs bg-[#d6409f]"></i>Alignment</span>
+            <span class="inline-flex items-center gap-1.5"><i class="w-2.5 h-2.5 rounded-xs bg-[#f5a524]"></i>Format / Version</span>
+            <span class="inline-flex items-center gap-1.5"><i class="w-2.5 h-2.5 rounded-xs bg-indigo-600"></i>Message bytes</span>
+            <span class="inline-flex items-center gap-1.5"><i class="w-2.5 h-2.5 rounded-xs bg-amber-600"></i>Repair (EC) bytes</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Live Decoder Diagnostics (6 cols) -->
+      <section class="lg:col-span-6 bg-white rounded-xl border border-slate-200 shadow-card p-6" aria-live="polite" aria-label="Scanner diagnostics">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Live Decoder Output</span>
+          <span class="inline-flex items-center gap-1.5 text-xs font-mono text-slate-500">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span>qr_engine.py</span>
+          </span>
+        </div>
+
+        <!-- Scanner Status Verdict Card -->
+        <div id="phone" class="rounded-xl p-5 border transition-colors bg-emerald-50/70 border-emerald-200">
+          <div class="flex items-center justify-between gap-3">
+            <div class="verdict text-xl sm:text-2xl font-bold tracking-tight text-emerald-900" id="verdict">Initializing…</div>
+            <div id="verdictIcon" class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+              <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+            </div>
+          </div>
+          <div id="decoded" class="mt-3 px-3.5 py-2.5 rounded-lg bg-white border border-slate-200/90 font-mono text-sm font-medium text-slate-900 break-all shadow-soft"></div>
+          <p id="why" class="mt-3 text-sm text-slate-700 leading-relaxed"></p>
+        </div>
+
+        <!-- 5-Stage Decoding Pipeline -->
+        <div class="mt-5">
+          <span class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Decoder Pipeline Stages</span>
+          <div id="pipe" class="grid grid-cols-5 gap-1.5"></div>
+        </div>
+
+        <!-- Key Telemetry Metrics -->
+        <div class="mt-5 grid grid-cols-3 gap-3">
+          <div class="rounded-xl bg-slate-50 border border-slate-200/80 p-3.5">
+            <div id="sCover" class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 font-mono">0.0%</div>
+            <div class="text-xs text-slate-500 mt-0.5">Area covered</div>
+          </div>
+          <div class="rounded-xl bg-slate-50 border border-slate-200/80 p-3.5">
+            <div id="sBytes" class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 font-mono">0</div>
+            <div class="text-xs text-slate-500 mt-0.5">Bytes corrupted</div>
+          </div>
+          <div class="rounded-xl bg-slate-50 border border-slate-200/80 p-3.5">
+            <div id="sBest" class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 font-mono">0.0%</div>
+            <div class="text-xs text-slate-500 mt-0.5">Max survived (<span id="sBestLvl">M</span>)</div>
+          </div>
+        </div>
+
+        <!-- Reed-Solomon Block Error Budget -->
+        <div class="mt-6 pt-5 border-t border-slate-100">
+          <div class="flex items-center justify-between mb-2.5">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Repair Budget per Interleaved Block</span>
+            <span class="text-xs text-slate-400">1 cell = 1 byte capacity</span>
+          </div>
+          <div id="blocks" class="space-y-2"></div>
+        </div>
+
+        <!-- Independent Cross-Check (jsQR) -->
+        <div id="jsqr" class="mt-5 pt-4 border-t border-slate-200/80 text-xs text-slate-600 leading-relaxed flex items-start gap-2">
+          <i data-lucide="shield-check" class="w-4 h-4 text-slate-400 shrink-0 mt-0.5"></i>
+          <span>Loading independent scanner cross-check…</span>
+        </div>
+      </section>
     </div>
-    <div class="lbl">Repair budget per block (each square = one byte it can fix)</div>
-    <div id="blocks"></div>
-    <div class="jsqr" id="jsqr">Second opinion: loading an independent scanner…</div>
-  </section>
-</div>
 
-<section class="challenges" style="margin-top:28px">
-  <h2>Five experiments (they tick themselves off)</h2>
-  <ul class="ch" id="ch">
-    <li id="c1"><b>Spill without breaking</b><span>Paint over the middle of the code. It keeps scanning while bytes get repaired (green).</span></li>
-    <li id="c2"><b>Find the breaking point</b><span>Keep spilling until a block runs out of repair budget.</span></li>
-    <li id="c3"><b>Upgrade to H</b><span>Switch to level H and survive with 15% or more of the code covered.</span></li>
-    <li id="c4"><b>Kill it with a scratch</b><span>Make it fail while covering less than 3% of the code. Hint: the corners.</span></li>
-    <li id="c5"><b>Speckles vs. blob</b><span>Try both 8% buttons at the same level. Same amount of damage. Different outcome?</span></li>
-  </ul>
-  <div class="insight" id="insight"></div>
-</section>
+    <!-- Guided Discovery Experiments -->
+    <section class="mt-10 bg-white rounded-xl border border-slate-200 shadow-card p-6">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div>
+          <h2 class="text-lg font-bold tracking-tight text-slate-900">Five Experiments to Test the Mechanism</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Interact with the QR code above—these milestones unlock automatically as you discover edge cases.</p>
+        </div>
+      </div>
 
-<section class="deep" style="margin-top:28px">
-  <h2>Go deeper</h2>
+      <ul id="ch" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <li id="c1" class="ch-card rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition-colors">
+          <div class="flex items-start justify-between gap-2 mb-1.5">
+            <b class="text-sm font-semibold text-slate-900">1. Spill safely</b>
+            <span class="ch-check w-5 h-5 rounded-full border border-slate-300 flex items-center justify-center shrink-0 text-transparent transition-colors">
+              <i data-lucide="check" class="w-3 h-3 stroke-[3]"></i>
+            </span>
+          </div>
+          <span class="text-xs text-slate-600 leading-relaxed block">Paint over the center. Keep scanning while bytes turn green.</span>
+        </li>
+        <li id="c2" class="ch-card rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition-colors">
+          <div class="flex items-start justify-between gap-2 mb-1.5">
+            <b class="text-sm font-semibold text-slate-900">2. Break the budget</b>
+            <span class="ch-check w-5 h-5 rounded-full border border-slate-300 flex items-center justify-center shrink-0 text-transparent transition-colors">
+              <i data-lucide="check" class="w-3 h-3 stroke-[3]"></i>
+            </span>
+          </div>
+          <span class="text-xs text-slate-600 leading-relaxed block">Keep spilling until a block exceeds its error correction limit.</span>
+        </li>
+        <li id="c3" class="ch-card rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition-colors">
+          <div class="flex items-start justify-between gap-2 mb-1.5">
+            <b class="text-sm font-semibold text-slate-900">3. Upgrade to H</b>
+            <span class="ch-check w-5 h-5 rounded-full border border-slate-300 flex items-center justify-center shrink-0 text-transparent transition-colors">
+              <i data-lucide="check" class="w-3 h-3 stroke-[3]"></i>
+            </span>
+          </div>
+          <span class="text-xs text-slate-600 leading-relaxed block">Switch to level H and survive ≥15% total code coverage.</span>
+        </li>
+        <li id="c4" class="ch-card rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition-colors">
+          <div class="flex items-start justify-between gap-2 mb-1.5">
+            <b class="text-sm font-semibold text-slate-900">4. Tiny fatal scratch</b>
+            <span class="ch-check w-5 h-5 rounded-full border border-slate-300 flex items-center justify-center shrink-0 text-transparent transition-colors">
+              <i data-lucide="check" class="w-3 h-3 stroke-[3]"></i>
+            </span>
+          </div>
+          <span class="text-xs text-slate-600 leading-relaxed block">Break the scan with &lt;3% coverage. Hint: target a corner finder.</span>
+        </li>
+        <li id="c5" class="ch-card rounded-xl border border-slate-200 bg-slate-50/50 p-4 transition-colors">
+          <div class="flex items-start justify-between gap-2 mb-1.5">
+            <b class="text-sm font-semibold text-slate-900">5. Speckles vs. blob</b>
+            <span class="ch-check w-5 h-5 rounded-full border border-slate-300 flex items-center justify-center shrink-0 text-transparent transition-colors">
+              <i data-lucide="check" class="w-3 h-3 stroke-[3]"></i>
+            </span>
+          </div>
+          <span class="text-xs text-slate-600 leading-relaxed block">Compare both 8% buttons at the same level. Why do they differ?</span>
+        </li>
+      </ul>
 
-  <details id="dBytes" open><summary>The bytes the scanner read, and the ones it fixed</summary><div>
-    <p>Your message is split into <b style="color:var(--data)">data bytes</b>, and each block gets <b style="color:var(--ec)">repair bytes</b>. Red outline = a byte your coffee changed. Green ring = a byte the decoder located and corrected. Hover any byte for its value.</p>
-    <p>The <b>syndromes</b> are the decoder's first check: it evaluates the block as a polynomial at special points. All zero means "this block is a valid codeword, nothing wrong". Anything non-zero is a fingerprint of the errors, and from it the decoder solves for <i>where</i> they are and <i>what</i> they should be.</p>
-    <div id="byteView"></div>
-  </div></details>
+      <!-- Dynamic Insight Callout -->
+      <div class="mt-4 rounded-xl bg-slate-900 text-slate-200 p-4 sm:p-5 text-sm leading-relaxed flex items-start gap-3">
+        <i data-lucide="lightbulb" class="w-5 h-5 text-amber-400 shrink-0 mt-0.5"></i>
+        <div id="insight"></div>
+      </div>
+    </section>
 
-  <details><summary>Why do QR codes look so random? (the 8 masks)</summary><div>
-    <p>Raw data can accidentally contain big empty patches, long stripes, or a pattern that looks like a corner finder (dark-light-dark-dark-dark-light-dark). Those confuse cameras. So the encoder XORs the data area with each of 8 fixed patterns, scores every result with penalty rules, and keeps the lowest. The chosen mask number is written into the format info so the scanner can undo it. Click a mask to force it. The damage you painted stays.</p>
-    <div class="row"><button id="autoMask">Use the best mask (automatic)</button><span id="maskNote" style="font-size:14px;color:var(--soft)"></span></div>
-    <div class="masks" id="masks"></div>
-    <div id="penTable" style="margin-top:12px;overflow-x:auto"></div>
-  </div></details>
+    <!-- Deep Dive Accordions -->
+    <section class="mt-10 space-y-3">
+      <div class="mb-4">
+        <h2 class="text-lg font-bold tracking-tight text-slate-900">Under the Hood</h2>
+        <p class="text-xs text-slate-500 mt-0.5">Inspect the live Galois Field bytes, syndromes, XOR masks, and polynomial math computed by our Python engine.</p>
+      </div>
 
-  <details><summary>The math: how bytes become polynomials</summary><div>
-    <p>Each byte is treated as a number in <b>GF(256)</b>, a 256-element number system where adding is XOR and multiplying never overflows past a byte. A block of data bytes becomes the coefficients of a polynomial. The repair bytes are the <b>remainder</b> when that polynomial (shifted up) is divided by a fixed <b>generator polynomial</b>. That makes the whole block divisible by the generator, so it equals zero at the generator's roots α⁰, α¹, α², …</p>
-    <p>Damage breaks that divisibility. Plugging the roots into the damaged block gives the syndromes. With <i>n</i> repair bytes you get <i>n</i> equations. Each unknown error has two unknowns (its position and its value), so <i>n</i> repair bytes can fix <i>n</i>/2 errors at unknown positions. That's why level H's "30%" means 30% of bytes, and why the budget squares above are half the number of repair bytes.</p>
-    <p>The decoder in this page runs the classic steps: <b>Berlekamp–Massey</b> (finds the error-locator polynomial), <b>Chien search</b> (its roots are the error positions), <b>Forney's formula</b> (the error values). All of it is in <a href="qr_engine.py" target="_blank" rel="noopener">qr_engine.py</a>.</p>
-    <div id="mathView" class="mono"></div>
-  </div></details>
+      <!-- Accordion 1: Bytes & Syndromes -->
+      <details id="dBytes" open class="bg-white rounded-xl border border-slate-200 shadow-soft overflow-hidden">
+        <summary class="flex items-center justify-between px-6 py-4 cursor-pointer hover:bg-slate-50/80 transition select-none">
+          <div class="flex items-center gap-2.5">
+            <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <i data-lucide="binary" class="w-4 h-4"></i>
+            </span>
+            <span class="text-sm sm:text-base font-semibold text-slate-900">Live Codeword Bytes &amp; Error Syndromes</span>
+          </div>
+          <i data-lucide="chevron-down" class="chev w-4 h-4 text-slate-400 transition-transform duration-200"></i>
+        </summary>
+        <div class="px-6 pb-6 pt-2 border-t border-slate-100 text-sm text-slate-600 space-y-3">
+          <p class="leading-relaxed">
+            Your message is encoded into <span class="font-semibold text-indigo-600">data bytes</span>, followed by <span class="font-semibold text-amber-600">parity repair bytes</span>. A <span class="underline decoration-rose-500 decoration-2">red border</span> marks a byte altered by your spill; a <span class="underline decoration-emerald-500 decoration-2">green ring</span> marks a byte algebraically repaired by Berlekamp–Massey + Forney. Hover any hex byte to compare raw vs. corrected values.
+          </p>
+          <p class="leading-relaxed">
+            <strong>Syndromes</strong> are the decoder's diagnostic fingerprint: it evaluates the received block polynomial at generator roots $\alpha^0, \alpha^1, \dots$. All <code class="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded">00</code> means zero detectable errors. Non-zero syndromes form a system of equations solved to find both <em>error locations</em> and <em>error magnitudes</em>.
+          </p>
+          <div id="byteView" class="pt-1"></div>
+        </div>
+      </details>
 
-  <details><summary>What the corner squares (and other fixed patterns) do</summary><div>
-    <p><b>Finder patterns</b> (the three big corner squares) are how a camera finds the code in a photo, and how it learns its size, angle and which way is up. Their 1:1:3:1:1 stripe ratio is the same in any direction. They contain no message data, so no repair byte protects them. Scanners vary: many need all three, some can guess one back. This simulation counts a finder as lost once 8 of its 49 squares are wrong.</p>
-    <p><b>Format info</b> (15 bits along the finders) says which error-correction level and mask were used. It's written twice, and has its own small error-correcting code, so the decoder picks the nearest valid pattern. <b>Timing</b> stripes help count rows and columns. <b>Alignment</b> squares help with bent or tilted codes.</p>
-    <p>This is also why <b>scattered speckles hurt more than one blob</b>: errors are counted in bytes, not squares. Each byte is 8 squares packed close together, so one blob ruins a few bytes completely, while the same number of speckles nicks a different byte each time.</p>
-  </div></details>
-</section>
+      <!-- Accordion 2: 8 Data Masks -->
+      <details class="bg-white rounded-xl border border-slate-200 shadow-soft overflow-hidden">
+        <summary class="flex items-center justify-between px-6 py-4 cursor-pointer hover:bg-slate-50/80 transition select-none">
+          <div class="flex items-center gap-2.5">
+            <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <i data-lucide="grid" class="w-4 h-4"></i>
+            </span>
+            <span class="text-sm sm:text-base font-semibold text-slate-900">Why QR Codes Look Random (The 8 XOR Masks)</span>
+          </div>
+          <i data-lucide="chevron-down" class="chev w-4 h-4 text-slate-400 transition-transform duration-200"></i>
+        </summary>
+        <div class="px-6 pb-6 pt-2 border-t border-slate-100 text-sm text-slate-600 space-y-4">
+          <p class="leading-relaxed">
+            Unmasked data can accidentally form large blank blobs, long stripes, or fake <code class="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded">1:1:3:1:1</code> finder patterns that confuse cameras. The encoder XORs the data region against 8 deterministic bit-patterns, scores every candidate using ISO penalty rules, and picks the lowest score. Click any mask below to force it while keeping your spill intact.
+          </p>
+          <div class="flex flex-wrap items-center gap-3">
+            <button id="autoMask" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition cursor-pointer">
+              <i data-lucide="wand-2" class="w-3.5 h-3.5"></i>
+              <span>Use lowest-penalty mask (auto)</span>
+            </button>
+            <span id="maskNote" class="text-xs font-mono text-slate-500"></span>
+          </div>
+          <div id="masks" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-9 gap-2.5"></div>
+          <div id="penTable" class="overflow-x-auto pt-2"></div>
+        </div>
+      </details>
 
-<div id="mini" aria-hidden="true"></div>
-<footer style="margin-top:28px">Everything on this page is computed live from your input by a from-scratch QR encoder and Reed–Solomon decoder written in Python (<a href="qr_engine.py" target="_blank" rel="noopener">qr_engine.py</a>), running in your browser through Pyodide. No libraries do the QR math. The "second opinion" uses jsQR, an independent open-source scanner, as a cross-check. Tip: turn off "Show repaired bytes" and point your phone camera at the screen.</footer>
-</div></main>
+      <!-- Accordion 3: Galois Field Polynomial Math -->
+      <details class="bg-white rounded-xl border border-slate-200 shadow-soft overflow-hidden">
+        <summary class="flex items-center justify-between px-6 py-4 cursor-pointer hover:bg-slate-50/80 transition select-none">
+          <div class="flex items-center gap-2.5">
+            <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <i data-lucide="function-square" class="w-4 h-4"></i>
+            </span>
+            <span class="text-sm sm:text-base font-semibold text-slate-900">The Math: Polynomial Division in GF(2⁸)</span>
+          </div>
+          <i data-lucide="chevron-down" class="chev w-4 h-4 text-slate-400 transition-transform duration-200"></i>
+        </summary>
+        <div class="px-6 pb-6 pt-2 border-t border-slate-100 text-sm text-slate-600 space-y-3 leading-relaxed">
+          <p>
+            Every byte is treated as an element of the finite field <strong>GF(256)</strong> (modulo primitive polynomial <code class="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded">0x11D</code>), where addition is bitwise XOR and multiplication never overflows 8 bits. A block of message bytes forms a polynomial $M(x)$, and the repair bytes are the remainder of $M(x) \cdot x^n \div g(x)$.
+          </p>
+          <p>
+            Because each unknown error has <strong>two unknowns</strong> (its byte position and its XOR error magnitude), $n$ parity bytes yield $n$ syndrome equations and can repair up to $\lfloor n/2 \rfloor$ corrupted bytes at unknown positions. Our decoder executes <strong>Berlekamp–Massey</strong> (error-locator polynomial), <strong>Chien search</strong> (roots = positions), and <strong>Forney's algorithm</strong> (error values) directly in <a href="qr_engine.py" target="_blank" rel="noopener" class="text-indigo-600 font-medium hover:underline">qr_engine.py</a>.
+          </p>
+          <div id="mathView" class="p-4 rounded-xl bg-slate-50 border border-slate-200 font-mono text-xs text-slate-800 space-y-2 overflow-x-auto"></div>
+        </div>
+      </details>
 
-<script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script>
-{
-const $ = s => document.querySelector(s);
-const S = {text: $('#msg').value, level: 'M', mask: -1, tool: 'coffee', brush: 2};
-let apiEncode, apiDecode, enc, size, orig, types, cwmap, cwMods, damage, eff, dec, cwHit = [], blockHits = [];
-const best = {L: 0, M: 0, Q: 0, H: 0};
-const done = {}; const presetsUsed = {};
-const C = {dark:'#15110e', light:'#ffffff', coffee:'#4a2a15', white:'#f7f0de'};
-const TYPE_COL = {1:'#e5484d', 2:null, 3:'#8e4ec6', 4:'#d6409f', 5:'#f5a524', 6:'#f5a524', 7:'#f5a524'};
-const cv = $('#qr'), ctx = cv.getContext('2d');
-const QZ = 3;
+      <!-- Accordion 4: Structural Patterns -->
+      <details class="bg-white rounded-xl border border-slate-200 shadow-soft overflow-hidden">
+        <summary class="flex items-center justify-between px-6 py-4 cursor-pointer hover:bg-slate-50/80 transition select-none">
+          <div class="flex items-center gap-2.5">
+            <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <i data-lucide="qr-code" class="w-4 h-4"></i>
+            </span>
+            <span class="text-sm sm:text-base font-semibold text-slate-900">Why Corner Squares Are Unprotected (Anatomy)</span>
+          </div>
+          <i data-lucide="chevron-down" class="chev w-4 h-4 text-slate-400 transition-transform duration-200"></i>
+        </summary>
+        <div class="px-6 pb-6 pt-2 border-t border-slate-100 text-sm text-slate-600 space-y-3 leading-relaxed">
+          <p>
+            <strong>Finder patterns</strong> (the three 7×7 corner targets) carry zero message bits—they exist so a camera can locate the code in a frame and determine orientation, scale, and perspective skew via their invariant <code class="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded">1:1:3:1:1</code> stripe ratio. Because they hold no codewords, Reed–Solomon cannot repair them.
+          </p>
+          <p>
+            <strong>Format info</strong> (15 bits hugging the finders) stores the error-correction level and mask ID, protected by its own <code class="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded">BCH(15,5)</code> code and written twice for redundancy.
+          </p>
+          <p>
+            <strong>Why scattered speckles beat a single blob:</strong> Reed–Solomon counts errors in <em>whole bytes</em> (8 adjacent modules packed in a 2×4 zig-zag column). One solid blob destroys a few bytes completely, whereas the same area scattered as speckles nicks dozens of separate bytes—exhausting the block's repair budget much faster.
+          </p>
+        </div>
+      </details>
+    </section>
 
-async function boot(){
-  try {
-    const py = await loadPyodide({indexURL:'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/'});
-    let srcUrl = 'qr_engine.py', res = await fetch(srcUrl).catch(() => null);
-    if (!res || !res.ok){ srcUrl = 'qr_engine.txt'; res = await fetch(srcUrl); }
-    const src = await res.text();
-    document.querySelectorAll('a[href="qr_engine.py"]').forEach(a => a.href = srcUrl);
-    py.runPython(src);
-    apiEncode = py.globals.get('api_encode'); apiDecode = py.globals.get('api_decode');
-    encodeNow(false);
-    $('#loader').remove();
-  } catch(e) {
-    $('#loadErr').textContent = 'Could not start the Python engine: ' + e.message + '. Please reload.';
-  }
-}
+    <!-- Footer -->
+    <footer class="mt-12 pt-6 border-t border-slate-200 text-xs text-slate-500 leading-relaxed flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <p class="max-w-3xl">
+        All encoding, masking, syndrome calculation, and Reed–Solomon error correction run live from scratch in <a href="qr_engine.py" target="_blank" rel="noopener" class="font-medium text-slate-700 underline">qr_engine.py</a> via Pyodide. <strong>jsQR</strong> is used strictly as an independent third-party cross-check. Tip: uncheck <em>Highlight repaired bytes</em> and point your real phone camera at the screen.
+      </p>
+    </footer>
+  </main>
 
-function encodeNow(keep){
-  const r = JSON.parse(apiEncode(S.text, S.level, S.mask));
-  if (r.error){ $('#encErr').textContent = r.error; return; }
-  $('#encErr').textContent = '';
-  const same = keep && enc && enc.size === r.size;
-  enc = r; size = r.size;
-  orig = Uint8Array.from(r.modules, c => c === '1' ? 1 : 0);
-  types = Uint8Array.from(r.types, c => +c);
-  cwmap = r.cwmap;
-  cwMods = Array.from({length: r.origin.length}, () => []);
-  cwmap.forEach((c, i) => { if (c >= 0) cwMods[c].push(i); });
-  if (!same) damage = new Uint8Array(size * size);
-  for (const b of document.querySelectorAll('#levels button')) b.classList.toggle('on', b.dataset.l === S.level);
-  drawMasks(); drawMath();
-  update();
-}
+  <!-- Mobile Sticky Verdict Pill -->
+  <div id="mini" aria-hidden="true" class="md:hidden fixed bottom-3 left-3 right-3 z-40 px-4 py-3 rounded-xl font-semibold text-sm text-white shadow-lg truncate transition-colors bg-emerald-600"></div>
 
-function update(){
-  eff = new Uint8Array(size * size);
-  for (let i = 0; i < eff.length; i++) eff[i] = damage[i] === 1 ? 1 : damage[i] === 2 ? 0 : orig[i];
-  dec = JSON.parse(apiDecode(Array.from(eff).join(''), size));
-  cwHit = cwMods.map(l => l.some(i => eff[i] !== orig[i]));
-  blockHits = enc.blocks.map(() => 0);
-  cwHit.forEach((h, c) => { if (h) blockHits[enc.origin[c][0]]++; });
-  render(); panel(); bytesView(); challenges(); scheduleJsqr();
-}
+  <!-- Scripts: Pyodide + jsQR + Application Logic -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <script>
+  {
+    lucide.createIcons();
 
-let pending = false;
-function schedule(){ if (!pending){ pending = true; requestAnimationFrame(() => { pending = false; update(); }); } }
+    const $ = s => document.querySelector(s);
+    const S = {text: $('#msg').value, level: 'M', mask: -1, tool: 'coffee', brush: 2};
+    let apiEncode, apiDecode, enc, size, orig, types, cwmap, cwMods, damage, eff, dec, cwHit = [], blockHits = [];
+    const best = {L: 0, M: 0, Q: 0, H: 0};
+    const done = {};
+    const presetsUsed = {};
+    const C = {dark: '#0f172a', light: '#ffffff', coffee: '#451a03', white: '#f8fafc'};
+    const TYPE_COL = {1: '#e5484d', 2: null, 3: '#8e4ec6', 4: '#d6409f', 5: '#f5a524', 6: '#f5a524', 7: '#f5a524'};
+    const cv = $('#qr'), ctx = cv.getContext('2d');
+    const QZ = 3;
 
-// ---------- drawing ----------
-function cell(){ return cv.width / (size + 2 * QZ); }
-function fixedSet(){
-  const fx = new Set(), bad = new Set();
-  if (dec.blocks){
-    const pos = enc.origin;
-    pos.forEach(([b, idx], c) => {
-      const blk = dec.blocks[b];
-      if (blk.status === 'fixed' && blk.positions.includes(idx)) fx.add(c);
-      if (blk.status === 'failed' && cwHit[c]) bad.add(c);
+    async function boot() {
+      try {
+        const py = await loadPyodide({indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/'});
+        let srcUrl = 'qr_engine.py', res = await fetch(srcUrl).catch(() => null);
+        if (!res || !res.ok) { srcUrl = 'qr_engine.txt'; res = await fetch(srcUrl); }
+        const src = await res.text();
+        document.querySelectorAll('a[href="qr_engine.py"]').forEach(a => a.href = srcUrl);
+        py.runPython(src);
+        apiEncode = py.globals.get('api_encode');
+        apiDecode = py.globals.get('api_decode');
+        encodeNow(false);
+        $('#loader').remove();
+      } catch (e) {
+        $('#loadErr').textContent = 'Could not start Python engine: ' + e.message + '. Please reload.';
+      }
+    }
+
+    function encodeNow(keep) {
+      const r = JSON.parse(apiEncode(S.text, S.level, S.mask));
+      if (r.error) { $('#encErr').textContent = r.error; return; }
+      $('#encErr').textContent = '';
+      const same = keep && enc && enc.size === r.size;
+      enc = r;
+      size = r.size;
+      orig = Uint8Array.from(r.modules, c => c === '1' ? 1 : 0);
+      types = Uint8Array.from(r.types, c => +c);
+      cwmap = r.cwmap;
+      cwMods = Array.from({length: r.origin.length}, () => []);
+      cwmap.forEach((c, i) => { if (c >= 0) cwMods[c].push(i); });
+      if (!same) damage = new Uint8Array(size * size);
+
+      // Update active level button styling
+      for (const b of document.querySelectorAll('#levels button')) {
+        const active = b.dataset.l === S.level;
+        b.className = active
+          ? 'lvl-btn flex flex-col items-center justify-center py-2 px-2 rounded-lg border border-slate-900 bg-slate-900 text-white shadow-soft transition cursor-pointer'
+          : 'lvl-btn flex flex-col items-center justify-center py-2 px-2 rounded-lg border border-slate-200 bg-slate-50/70 hover:bg-slate-100 text-slate-700 transition cursor-pointer';
+        b.querySelector('span:last-child').className = active ? 'text-[11px] text-slate-300' : 'text-[11px] text-slate-500';
+      }
+      $('#sBestLvl').textContent = S.level;
+      drawMasks();
+      drawMath();
+      update();
+    }
+
+    function update() {
+      eff = new Uint8Array(size * size);
+      for (let i = 0; i < eff.length; i++) eff[i] = damage[i] === 1 ? 1 : damage[i] === 2 ? 0 : orig[i];
+      dec = JSON.parse(apiDecode(Array.from(eff).join(''), size));
+      cwHit = cwMods.map(l => l.some(i => eff[i] !== orig[i]));
+      blockHits = enc.blocks.map(() => 0);
+      cwHit.forEach((h, c) => { if (h) blockHits[enc.origin[c][0]]++; });
+      render();
+      panel();
+      bytesView();
+      challenges();
+      scheduleJsqr();
+    }
+
+    let pending = false;
+    function schedule() {
+      if (!pending) {
+        pending = true;
+        requestAnimationFrame(() => { pending = false; update(); });
+      }
+    }
+
+    // ---------- Canvas Rendering ----------
+    function cell() { return cv.width / (size + 2 * QZ); }
+    function fixedSet() {
+      const fx = new Set(), bad = new Set();
+      if (dec.blocks) {
+        enc.origin.forEach(([b, idx], c) => {
+          const blk = dec.blocks[b];
+          if (blk.status === 'fixed' && blk.positions.includes(idx)) fx.add(c);
+          if (blk.status === 'failed' && cwHit[c]) bad.add(c);
+        });
+      }
+      return [fx, bad];
+    }
+
+    function render() {
+      const k = cell();
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, cv.width, cv.height);
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          const i = y * size + x, d = damage[i];
+          ctx.fillStyle = d === 1 ? C.coffee : d === 2 ? C.white : (orig[i] ? C.dark : C.light);
+          if (d || orig[i]) ctx.fillRect((x + QZ) * k, (y + QZ) * k, k + 0.5, k + 0.5);
+        }
+      }
+      if ($('#oAnat').checked) {
+        ctx.globalAlpha = 0.5;
+        for (let i = 0; i < size * size; i++) {
+          let col = TYPE_COL[types[i]];
+          if (types[i] === 0) {
+            const c = cwmap[i];
+            if (c < 0) continue;
+            const [b, idx] = enc.origin[c];
+            col = idx < enc.blocks[b].data.length ? '#4f46e5' : '#d97706';
+          }
+          if (!col) continue;
+          ctx.fillStyle = col;
+          ctx.fillRect((i % size + QZ) * k, ((i / size | 0) + QZ) * k, k + 0.5, k + 0.5);
+        }
+        ctx.globalAlpha = 1;
+      }
+      if ($('#oFixed').checked) {
+        const [fx, bad] = fixedSet();
+        ctx.globalAlpha = 0.55;
+        for (const [set, col] of [[fx, '#10b981'], [bad, '#e11d48']]) {
+          for (const c of set) {
+            ctx.fillStyle = col;
+            for (const i of cwMods[c]) ctx.fillRect((i % size + QZ) * k, ((i / size | 0) + QZ) * k, k + 0.5, k + 0.5);
+          }
+        }
+        ctx.globalAlpha = 1;
+        if (dec.finders) {
+          dec.finders.forEach((f, n) => {
+            if (f.found) return;
+            const [cx, cy] = [[3, 3], [size - 4, 3], [3, size - 4]][n];
+            ctx.strokeStyle = '#e11d48';
+            ctx.lineWidth = Math.max(3, k / 3);
+            ctx.strokeRect((cx - 3.5 + QZ) * k, (cy - 3.5 + QZ) * k, 7 * k, 7 * k);
+          });
+        }
+      }
+      if ($('#oBytes').checked) {
+        ctx.strokeStyle = 'rgba(217, 119, 6, 0.85)';
+        ctx.lineWidth = Math.max(1.5, k / 7);
+        ctx.beginPath();
+        for (let y = 0; y < size; y++) {
+          for (let x = 0; x < size; x++) {
+            const c = cwmap[y * size + x];
+            if (c < 0) continue;
+            if (x + 1 < size && cwmap[y * size + x + 1] !== c) {
+              ctx.moveTo((x + 1 + QZ) * k, (y + QZ) * k);
+              ctx.lineTo((x + 1 + QZ) * k, (y + 1 + QZ) * k);
+            }
+            if (y + 1 < size && cwmap[(y + 1) * size + x] !== c) {
+              ctx.moveTo((x + QZ) * k, (y + 1 + QZ) * k);
+              ctx.lineTo((x + 1 + QZ) * k, (y + 1 + QZ) * k);
+            }
+          }
+        }
+        ctx.stroke();
+      }
+      if (hoverPt) {
+        ctx.strokeStyle = 'rgba(79, 70, 229, 0.9)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc((hoverPt[0] + QZ) * k, (hoverPt[1] + QZ) * k, Math.max(0.5, S.brush - 0.5) * k, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    // ---------- Painting ----------
+    let painting = false, last = null, hoverPt = null;
+    function pt(e) {
+      const r = cv.getBoundingClientRect();
+      const k = r.width / (size + 2 * QZ);
+      return [(e.clientX - r.left) / k - QZ, (e.clientY - r.top) / k - QZ];
+    }
+    function stamp(px, py) {
+      const rad = Math.max(0.5, S.brush - 0.5);
+      const v = S.tool === 'coffee' ? 1 : S.tool === 'white' ? 2 : 0;
+      for (let y = Math.floor(py - rad); y <= py + rad; y++) {
+        for (let x = Math.floor(px - rad); x <= px + rad; x++) {
+          if (x < 0 || y < 0 || x >= size || y >= size) continue;
+          if ((x + 0.5 - px) ** 2 + (y + 0.5 - py) ** 2 <= rad * rad + 0.01) damage[y * size + x] = v;
+        }
+      }
+    }
+    function paint(e) {
+      const p = pt(e);
+      if (last) {
+        const n = Math.ceil(Math.hypot(p[0] - last[0], p[1] - last[1]) * 2) || 1;
+        for (let s = 1; s <= n; s++) stamp(last[0] + (p[0] - last[0]) * s / n, last[1] + (p[1] - last[1]) * s / n);
+      } else {
+        stamp(p[0], p[1]);
+      }
+      last = p;
+      schedule();
+    }
+    cv.addEventListener('pointerdown', e => { if (!enc) return; painting = true; last = null; cv.setPointerCapture(e.pointerId); paint(e); });
+    cv.addEventListener('pointermove', e => { if (!enc) return; hoverPt = pt(e); if (painting) paint(e); else { render(); describe(); } });
+    cv.addEventListener('pointerup', () => { painting = false; last = null; });
+    cv.addEventListener('pointerleave', () => { hoverPt = null; if (enc) render(); });
+
+    const TYPE_NAME = [
+      '',
+      'Finder pattern: locates code & orientation (no data).',
+      'Separator: quiet border around finder.',
+      'Timing stripe: calibrates module grid.',
+      'Alignment pattern: corrects perspective skew.',
+      'Format info: stores EC level + mask ID (BCH protected).',
+      'Version info: encodes matrix dimensions.',
+      'Fixed dark module.'
+    ];
+    function describe() {
+      const [x, y] = hoverPt.map(Math.floor);
+      if (x < 0 || y < 0 || x >= size || y >= size) {
+        $('#hover').textContent = 'Hover any square to inspect its role or byte index';
+        return;
+      }
+      const i = y * size + x, t = types[i];
+      let s = `[${y},${x}] · `;
+      if (t) s += TYPE_NAME[t];
+      else if (cwmap[i] < 0) s += 'Remainder padding bit.';
+      else {
+        const c = cwmap[i], [b, idx] = enc.origin[c], dl = enc.blocks[b].data.length;
+        s += idx < dl ? `Data byte #${idx + 1} (Block ${b + 1})` : `Repair EC byte #${idx - dl + 1} (Block ${b + 1})`;
+        s += ' · 1 of 8 bits';
+      }
+      $('#hover').textContent = s;
+    }
+
+    // ---------- Presets ----------
+    const isFinderish = i => types[i] === 1 || types[i] === 2 || types[i] === 5 || types[i] === 7;
+    function flip(i) { damage[i] = orig[i] ? 2 : 1; }
+    function count8() { return Math.round(size * size * 0.08); }
+    function preset(name) {
+      presetsUsed[name] = S.level;
+      if (name === 'speck') {
+        damage.fill(0);
+        const cand = [];
+        for (let i = 0; i < size * size; i++) if (!isFinderish(i)) cand.push(i);
+        for (let n = count8(), j = 0; j < n; j++) {
+          const r = j + Math.floor(Math.random() * (cand.length - j));
+          [cand[j], cand[r]] = [cand[r], cand[j]];
+          flip(cand[j]);
+        }
+      } else if (name === 'blob') {
+        damage.fill(0);
+        const cx = size * (0.4 + Math.random() * 0.25), cy = size * (0.4 + Math.random() * 0.25);
+        const cand = [];
+        for (let i = 0; i < size * size; i++) if (!isFinderish(i)) cand.push(i);
+        cand.sort((a, b) => ((a % size + 0.5 - cx) ** 2 + ((a / size | 0) + 0.5 - cy) ** 2) - ((b % size + 0.5 - cx) ** 2 + ((b / size | 0) + 0.5 - cy) ** 2));
+        cand.slice(0, count8()).forEach(flip);
+      } else if (name === 'logo') {
+        const w = Math.round(size * 0.3), o = Math.floor((size - w) / 2);
+        for (let y = o; y < o + w; y++) for (let x = o; x < o + w; x++) damage[y * size + x] = 2;
+      } else if (name === 'corner') {
+        const cx = size - 4;
+        for (let y = 2; y <= 4; y++) for (let x = cx - 1; x <= cx + 1; x++) damage[y * size + x] = 2;
+      } else {
+        damage.fill(0);
+      }
+      update();
+    }
+    $('#pSpeck').onclick = () => preset('speck');
+    $('#pBlob').onclick = () => preset('blob');
+    $('#pLogo').onclick = () => preset('logo');
+    $('#pCorner').onclick = () => preset('corner');
+    $('#pReset').onclick = () => preset('reset');
+
+    // ---------- Diagnostics Panel ----------
+    const coverPct = () => damage.reduce((a, d) => a + (d ? 1 : 0), 0) / (size * size) * 100;
+    function panel() {
+      const cover = coverPct();
+      const nHit = cwHit.filter(Boolean).length;
+      const nFixed = dec.blocks ? dec.blocks.reduce((a, b) => a + b.positions.length, 0) : 0;
+      const ok = dec.ok, wrong = ok && dec.text !== S.text;
+      const pass = ok && !wrong;
+
+      if (pass) best[S.level] = Math.max(best[S.level], cover);
+
+      // Update verdict card styling
+      $('#phone').className = pass
+        ? 'rounded-xl p-5 border transition-colors bg-emerald-50/70 border-emerald-200'
+        : 'rounded-xl p-5 border transition-colors bg-rose-50/70 border-rose-200';
+      $('#verdict').className = pass
+        ? 'verdict text-xl sm:text-2xl font-bold tracking-tight text-emerald-900'
+        : 'verdict text-xl sm:text-2xl font-bold tracking-tight text-rose-900';
+      $('#verdictIcon').className = pass
+        ? 'w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0'
+        : 'w-9 h-9 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center shrink-0';
+      $('#verdictIcon').innerHTML = pass
+        ? '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>'
+        : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+
+      $('#verdict').textContent = !ok
+        ? 'Scan Failed'
+        : wrong
+          ? 'Decoded Wrong Payload'
+          : nFixed
+            ? `Scans Cleanly · Repaired ${nFixed} Byte${nFixed > 1 ? 's' : ''}`
+            : 'Scans Cleanly';
+      $('#decoded').textContent = ok ? dec.text : '—';
+
+      // Mobile sticky bar
+      $('#mini').className = pass
+        ? 'md:hidden fixed bottom-3 left-3 right-3 z-40 px-4 py-3 rounded-xl font-semibold text-sm text-white shadow-lg truncate transition-colors bg-emerald-600'
+        : 'md:hidden fixed bottom-3 left-3 right-3 z-40 px-4 py-3 rounded-xl font-semibold text-sm text-white shadow-lg truncate transition-colors bg-rose-600';
+      $('#mini').textContent = $('#verdict').textContent + (ok ? ' · ' + dec.text : '');
+
+      $('#why').innerHTML = explain(cover, nHit, nFixed, wrong);
+
+      // 5-stage pipeline pills
+      const st = ['locate', 'format', 'fix', 'parse', 'done'], at = st.indexOf(dec.stage);
+      $('#pipe').innerHTML = ['1. Finders', '2. Format', '3. Unmask', '4. RS Fix', '5. Parse'].map((n, i) => {
+        let cls = 'bg-slate-100 text-slate-500 border-slate-200/80';
+        if (dec.ok) {
+          cls = 'bg-emerald-50 text-emerald-700 border-emerald-200 font-semibold';
+        } else {
+          const failAt = dec.stage === 'fix' ? 3 : dec.stage === 'parse' ? 4 : at;
+          if (i < failAt) cls = 'bg-emerald-50 text-emerald-700 border-emerald-200 font-semibold';
+          else if (i === failAt) cls = 'bg-rose-50 text-rose-700 border-rose-200 font-semibold';
+        }
+        return `<div class="px-2 py-1.5 rounded-lg border text-[11px] text-center truncate ${cls}">${n}</div>`;
+      }).join('');
+
+      $('#sCover').textContent = cover.toFixed(1) + '%';
+      $('#sBytes').textContent = `${nHit}/${enc.origin.length}`;
+      $('#sBest').textContent = best[S.level].toFixed(1) + '%';
+
+      $('#blocks').innerHTML = enc.blocks.map((b, i) => {
+        const can = b.ec.length >> 1, hit = blockHits[i];
+        const cells = Array.from({length: Math.max(can, hit)}, (_, j) => {
+          let bg = 'bg-slate-100 border-slate-200';
+          if (j < hit) {
+            if (j >= can) bg = 'bg-rose-500 border-rose-600';
+            else if (dec.blocks) bg = 'bg-emerald-500 border-emerald-600';
+            else bg = 'bg-slate-400 border-slate-500';
+          }
+          return `<i class="w-3.5 h-3.5 rounded-[3px] border ${bg}"></i>`;
+        }).join('');
+        return `<div class="flex items-center justify-between gap-3 text-xs">
+          <span class="font-medium text-slate-600 w-16 shrink-0">Block ${i + 1}</span>
+          <div class="flex flex-wrap gap-1 flex-1">${cells}</div>
+          <span class="font-mono text-slate-500 shrink-0 ${hit > can ? 'text-rose-600 font-semibold' : ''}">${hit}/${can}</span>
+        </div>`;
+      }).join('') + `<div class="text-xs text-slate-500 pt-2">Version ${enc.version} (${size}×${size} modules) · ${enc.payload_bytes} payload bytes · ${enc.blocks.length} block${enc.blocks.length > 1 ? 's' : ''} × ${enc.ec_per_block} EC bytes</div>`;
+    }
+
+    function explain(cover, nHit, nFixed, wrong) {
+      if (dec.stage === 'locate') {
+        const lost = dec.finders.filter(f => !f.found).length;
+        return `You damaged <strong>${lost} corner finder pattern${lost > 1 ? 's' : ''}</strong>. Finder targets hold <strong>zero data</strong>—the camera uses them to detect geometry and orientation. Without them, decoding aborts before error correction even starts, so ${cover.toFixed(1)}% damage was fatal.`;
+      }
+      if (dec.stage === 'format') {
+        return `Both redundant copies of the 15-bit <strong>format info</strong> (adjacent to the corners) are corrupted beyond BCH repair. Without it, the scanner cannot know which XOR mask or EC level was used.`;
+      }
+      if (dec.stage === 'fix') {
+        const b = dec.blocks.findIndex(x => x.status === 'failed');
+        return `Block ${b + 1} suffered more corrupted bytes than its budget of <strong>${dec.blocks[b].can_fix}</strong>. Because each unknown error requires solving for two variables (position + magnitude), $n$ parity bytes can fix at most $n/2$ unknown byte errors.`;
+      }
+      if (dec.stage === 'parse') return 'Parity checks passed, but the resulting bitstream header is invalid: ' + (dec.error || '');
+      if (wrong) return 'Extreme corruption pushed the codeword closer to a different valid polynomial—a rare miscorrection when damage far exceeds capacity.';
+      if (!nHit) return `Zero bytes corrupted. ${enc.ec_per_block * enc.blocks.length} of the ${enc.origin.length} total bytes are <strong>Reed–Solomon repair bytes</strong> computed via polynomial division. Drag on the QR code to spill coffee.`;
+      if (!nFixed) return `Your brush only painted over modules that already matched that color, so zero underlying bits flipped.`;
+      return `The decoder independently located and repaired <strong>${nFixed} corrupted byte${nFixed > 1 ? 's' : ''}</strong> (highlighted in green) without knowing where you painted.`;
+    }
+
+    // ---------- Challenges ----------
+    function tick(id) {
+      if (!done[id]) {
+        done[id] = true;
+        $('#' + id).classList.add('done');
+      }
+      insight();
+    }
+    function challenges() {
+      const cover = coverPct(), nFixed = dec.blocks ? dec.blocks.reduce((a, b) => a + b.positions.length, 0) : 0;
+      if (dec.ok && nFixed >= 3 && cover >= 4) tick('c1');
+      if (dec.stage === 'fix' && !dec.ok) tick('c2');
+      if (dec.ok && S.level === 'H' && cover >= 15) tick('c3');
+      if (!dec.ok && cover < 3 && cover > 0) tick('c4');
+      if (presetsUsed.speck && presetsUsed.speck === presetsUsed.blob) tick('c5');
+      insight();
+    }
+    function insight() {
+      let t = 'Core takeaway: <strong class="text-white">the scanner is never told where the damage is.</strong> Syndromes let it solve for error locations and values simultaneously.';
+      if (done.c4) t = 'Key architectural contrast: <strong class="text-white">data bytes are protected by Galois Field algebra</strong>, while <strong class="text-amber-300">corner finder patterns have zero mathematical redundancy</strong>—a tiny corner scratch beats a massive center spill.';
+      if (done.c5) t += ' Also notice that errors are counted in <strong class="text-white">8-bit bytes, not pixels</strong>: a single blob ruins a few bytes completely, whereas scattered speckles nick dozens of separate bytes.';
+      if (done.c3) t += ' Level H (~30% budget) is why brands can safely embed logos inside QR codes.';
+      $('#insight').innerHTML = t;
+    }
+
+    // ---------- Bytes View ----------
+    const hex = v => v.toString(16).padStart(2, '0');
+    function bytesView() {
+      if (!dec || !$('#dBytes').open) return;
+      const fs = fixedSet()[0];
+      $('#byteView').innerHTML = enc.blocks.map((b, bi) => {
+        const read = dec.blocks ? dec.blocks[bi].read : null, all = b.data.concat(b.ec);
+        const idx2cw = {};
+        enc.origin.forEach(([bb, ii], c) => { if (bb === bi) idx2cw[ii] = c; });
+        const cells = all.map((v, i) => {
+          const c = idx2cw[i], hit = cwHit[c], fx = fs.has(c), rv = read ? read[i] : v;
+          const tip = `${i < b.data.length ? 'Data' : 'Parity'} byte · orig 0x${hex(v)}${hit && read ? ` · read 0x${hex(rv)}` : ''}${fx ? ' · repaired ✓' : ''}`;
+          return `<span class="byte-chip ${i < b.data.length ? 'byte-d' : 'byte-e'}${hit ? ' byte-hit' : ''}${fx ? ' byte-fx' : ''}" title="${tip}">${hex(rv)}</span>`;
+        }).join('');
+        const syn = dec.blocks
+          ? dec.blocks[bi].syndromes.map(s => s ? `<span class="text-rose-600 font-semibold">${hex(s)}</span>` : '00').join(' ')
+          : '(scanner halted before reading bytes)';
+        return `<div class="mt-4 pt-4 border-t border-slate-100 first:mt-2 first:pt-0 first:border-0">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700">Block ${bi + 1}</h3>
+            <span class="text-xs font-mono text-slate-500">${b.data.length} data + ${b.ec.length} EC bytes · status: <strong>${dec.blocks ? dec.blocks[bi].status : 'unreached'}</strong></span>
+          </div>
+          <div class="flex flex-wrap gap-1">${cells}</div>
+          <div class="mt-2 font-mono text-xs text-slate-500 break-all">Syndromes: ${syn}</div>
+        </div>`;
+      }).join('');
+    }
+    $('#dBytes').addEventListener('toggle', bytesView);
+
+    // ---------- Masks ----------
+    function drawGrid(c, str, n) {
+      const g = c.getContext('2d'), k = c.width / n;
+      g.fillStyle = '#fff';
+      g.fillRect(0, 0, c.width, c.height);
+      g.fillStyle = '#0f172a';
+      for (let i = 0; i < n * n; i++) if (str[i] === '1') g.fillRect((i % n) * k, (i / n | 0) * k, k, k);
+    }
+    function drawMasks() {
+      const items = enc.mask_grids.map((g, m) => ({g, m, p: enc.penalties[m]})).concat([{g: enc.unmasked, m: -2, p: enc.unmasked_penalty}]);
+      $('#masks').innerHTML = items.map(it => {
+        const isSel = it.m === enc.mask;
+        const isBest = it.m === enc.auto_mask;
+        return `<button data-m="${it.m}" ${it.m === -2 ? 'disabled' : ''}
+          class="mk flex flex-col items-center p-2 rounded-xl border text-center transition cursor-pointer ${isSel ? 'border-indigo-600 bg-indigo-50/40 ring-2 ring-indigo-500/20' : 'border-slate-200 bg-white hover:bg-slate-50'} ${it.m === -2 ? 'opacity-75 cursor-default' : ''}">
+          <canvas width="${size * 3}" height="${size * 3}" class="w-full aspect-square rounded bg-white mb-1.5" style="image-rendering:pixelated"></canvas>
+          <span class="text-xs font-semibold ${isBest ? 'text-emerald-600' : 'text-slate-800'}">${it.m === -2 ? 'Unmasked' : 'Mask ' + it.m}</span>
+          <span class="text-[11px] font-mono text-slate-500">pen: ${it.p.total}</span>
+        </button>`;
+      }).join('');
+      [...$('#masks').querySelectorAll('canvas')].forEach((c, j) => drawGrid(c, items[j].g, size));
+      $('#masks').querySelectorAll('.mk:not([disabled])').forEach(b => b.onclick = () => { S.mask = +b.dataset.m; encodeNow(true); });
+      $('#maskNote').textContent = `Active: Mask ${enc.mask} [${enc.mask_formulas[enc.mask]}]${enc.mask === enc.auto_mask ? ' (lowest penalty)' : ' (forced)'}`;
+      const rows = [
+        ['Runs of 5+ identical modules', 'n1'],
+        ['2×2 solid color blocks', 'n2'],
+        ['Finder look-alikes (1:1:3:1:1)', 'n3'],
+        ['Dark/light ratio imbalance', 'n4'],
+        ['Total Penalty Score', 'total']
+      ];
+      $('#penTable').innerHTML = `<table class="w-full text-xs text-left border-collapse">
+        <thead><tr class="border-b border-slate-200 text-slate-500"><th class="py-2 pr-4 font-semibold">ISO Penalty Rule</th><th class="py-2 px-4 text-right font-semibold">Unmasked</th><th class="py-2 pl-4 text-right font-semibold">Mask ${enc.mask}</th></tr></thead>
+        <tbody class="divide-y divide-slate-100">${rows.map(([n, k], idx) => `<tr class="${idx === 4 ? 'font-bold text-slate-900 bg-slate-50/70' : 'text-slate-600'}"><td class="py-2 pr-4">${n}</td><td class="py-2 px-4 text-right font-mono">${enc.unmasked_penalty[k]}</td><td class="py-2 pl-4 text-right font-mono">${enc.penalties[enc.mask][k]}</td></tr>`).join('')}</tbody>
+      </table>`;
+    }
+    $('#autoMask').onclick = () => { S.mask = -1; encodeNow(true); };
+
+    // ---------- Math View ----------
+    const SUP = n => String(n).split('').map(d => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d]).join('');
+    function drawMath() {
+      const e = enc.generator_exps, n = e.length - 1;
+      const terms = e.map((a, i) => `α${SUP(a)}x${SUP(n - i)}`).slice(0, 6).join(' + ');
+      const b = enc.blocks[0];
+      $('#mathView').innerHTML = `<div><span class="text-slate-400">// Generator polynomial for ${n} parity bytes</span><br>g(x) = ${terms} + … (${n + 1} terms)</div>
+        <div><span class="text-slate-400">// Block 1 message polynomial coefficients (hex)</span><br>M(x) = [${b.data.map(hex).join(' ')}]</div>
+        <div><span class="text-slate-400">// Remainder R(x) = (M(x)·x^${n}) mod g(x)</span><br>EC   = [${b.ec.map(hex).join(' ')}]</div>`;
+    }
+
+    // ---------- Controls ----------
+    let typingT;
+    $('#msg').addEventListener('input', e => {
+      clearTimeout(typingT);
+      typingT = setTimeout(() => { S.text = e.target.value; if (enc) encodeNow(false); }, 120);
     });
-  }
-  return [fx, bad];
-}
-function render(){
-  const k = cell();
-  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
-  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++){
-    const i = y * size + x, d = damage[i];
-    ctx.fillStyle = d === 1 ? C.coffee : d === 2 ? C.white : (orig[i] ? C.dark : C.light);
-    if (d || orig[i]) ctx.fillRect((x + QZ) * k, (y + QZ) * k, k + .5, k + .5);
-  }
-  const anat = $('#oAnat').checked;
-  if (anat){
-    ctx.globalAlpha = .5;
-    for (let i = 0; i < size * size; i++){
-      let col = TYPE_COL[types[i]];
-      if (types[i] === 0){ const c = cwmap[i]; if (c < 0) continue; const [b, idx] = enc.origin[c]; col = idx < enc.blocks[b].data.length ? '#3e63dd' : '#e8590c'; }
-      if (!col) continue;
-      ctx.fillStyle = col; ctx.fillRect((i % size + QZ) * k, ((i / size | 0) + QZ) * k, k + .5, k + .5);
-    }
-    ctx.globalAlpha = 1;
-  }
-  if ($('#oFixed').checked){
-    const [fx, bad] = fixedSet();
-    ctx.globalAlpha = .55;
-    for (const [set, col] of [[fx, '#12b05a'], [bad, '#e5484d']]) for (const c of set){
-      ctx.fillStyle = col;
-      for (const i of cwMods[c]) ctx.fillRect((i % size + QZ) * k, ((i / size | 0) + QZ) * k, k + .5, k + .5);
-    }
-    ctx.globalAlpha = 1;
-    if (dec.finders) dec.finders.forEach((f, n) => {
-      if (f.found) return;
-      const [cx, cy] = [[3, 3], [size - 4, 3], [3, size - 4]][n];
-      ctx.strokeStyle = '#e5484d'; ctx.lineWidth = Math.max(3, k / 3);
-      ctx.strokeRect((cx - 3.5 + QZ) * k, (cy - 3.5 + QZ) * k, 7 * k, 7 * k);
+    $('#levels').addEventListener('click', e => {
+      const b = e.target.closest('button');
+      if (!b || !enc) return;
+      S.level = b.dataset.l;
+      encodeNow(false);
     });
-  }
-  if ($('#oBytes').checked){
-    ctx.strokeStyle = 'rgba(232,89,12,.9)'; ctx.lineWidth = Math.max(1.5, k / 7); ctx.beginPath();
-    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++){
-      const c = cwmap[y * size + x]; if (c < 0) continue;
-      if (x + 1 < size && cwmap[y * size + x + 1] !== c){ ctx.moveTo((x + 1 + QZ) * k, (y + QZ) * k); ctx.lineTo((x + 1 + QZ) * k, (y + 1 + QZ) * k); }
-      if (y + 1 < size && cwmap[(y + 1) * size + x] !== c){ ctx.moveTo((x + QZ) * k, (y + 1 + QZ) * k); ctx.lineTo((x + 1 + QZ) * k, (y + 1 + QZ) * k); }
+    $('#toolSeg').addEventListener('click', e => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      S.tool = b.dataset.t;
+      for (const x of $('#toolSeg').children) {
+        const active = x === b;
+        x.className = active
+          ? 'tool-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer bg-white text-slate-900 shadow-soft'
+          : 'tool-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer text-slate-600 hover:text-slate-900';
+      }
+    });
+    $('#bsize').addEventListener('input', e => S.brush = +e.target.value);
+    for (const id of ['#oFixed', '#oAnat', '#oBytes']) {
+      $(id).addEventListener('change', () => {
+        const leg = $('#legend');
+        if ($('#oAnat').checked) {
+          leg.classList.remove('hidden');
+          leg.classList.add('flex');
+        } else {
+          leg.classList.add('hidden');
+          leg.classList.remove('flex');
+        }
+        if (enc) render();
+      });
     }
-    ctx.stroke();
+
+    // ---------- Independent Cross-Check (jsQR) ----------
+    let jt;
+    function scheduleJsqr() { clearTimeout(jt); jt = setTimeout(runJsqr, 180); }
+    function runJsqr() {
+      if (typeof jsQR !== 'function') {
+        $('#jsqr').innerHTML = '<span>Independent cross-check unavailable (jsQR did not load).</span>';
+        return;
+      }
+      const k = 6, n = size + 8, c = document.createElement('canvas');
+      c.width = c.height = n * k;
+      const g = c.getContext('2d');
+      g.fillStyle = '#fff';
+      g.fillRect(0, 0, c.width, c.height);
+      g.fillStyle = '#000';
+      for (let i = 0; i < size * size; i++) if (eff[i]) g.fillRect((i % size + 4) * k, ((i / size | 0) + 4) * k, k, k);
+      const r = jsQR(g.getImageData(0, 0, c.width, c.height).data, c.width, c.height, {inversionAttempts: 'dontInvert'});
+      $('#jsqr').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 shrink-0 mt-0.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+        <span>Independent cross-check via <strong>jsQR</strong> (third-party scanner reading the same canvas pixels): ${r ? `<strong class="text-emerald-700">scans cleanly</strong> (<code class="font-mono text-[11px] bg-slate-100 px-1 py-0.5 rounded">${r.data.replace(/[<&]/g, ' ')}</code>)` : `<strong class="text-rose-600">cannot decode</strong>`}.</span>`;
+    }
+
+    boot();
   }
-  if (hoverPt){
-    ctx.strokeStyle = 'rgba(200,147,90,.95)'; ctx.lineWidth = 2; ctx.beginPath();
-    ctx.arc((hoverPt[0] + QZ) * k, (hoverPt[1] + QZ) * k, Math.max(.5, S.brush - .5) * k, 0, Math.PI * 2); ctx.stroke();
-  }
-}
-
-// ---------- painting ----------
-let painting = false, last = null, hoverPt = null;
-function pt(e){ const r = cv.getBoundingClientRect(); const k = r.width / (size + 2 * QZ); return [(e.clientX - r.left) / k - QZ, (e.clientY - r.top) / k - QZ]; }
-function stamp(px, py){
-  const rad = Math.max(.5, S.brush - .5), v = S.tool === 'coffee' ? 1 : S.tool === 'white' ? 2 : 0;
-  for (let y = Math.floor(py - rad); y <= py + rad; y++) for (let x = Math.floor(px - rad); x <= px + rad; x++){
-    if (x < 0 || y < 0 || x >= size || y >= size) continue;
-    if ((x + .5 - px) ** 2 + (y + .5 - py) ** 2 <= rad * rad + .01) damage[y * size + x] = v;
-  }
-}
-function paint(e){
-  const p = pt(e);
-  if (last){ const n = Math.ceil(Math.hypot(p[0] - last[0], p[1] - last[1]) * 2) || 1; for (let s = 1; s <= n; s++) stamp(last[0] + (p[0] - last[0]) * s / n, last[1] + (p[1] - last[1]) * s / n); }
-  else stamp(p[0], p[1]);
-  last = p; schedule();
-}
-cv.addEventListener('pointerdown', e => { if (!enc) return; painting = true; last = null; cv.setPointerCapture(e.pointerId); paint(e); });
-cv.addEventListener('pointermove', e => { if (!enc) return; hoverPt = pt(e); if (painting) paint(e); else { render(); describe(); } });
-cv.addEventListener('pointerup', () => { painting = false; last = null; });
-cv.addEventListener('pointerleave', () => { hoverPt = null; if (enc) render(); });
-
-const TYPE_NAME = ['', 'Finder pattern: how the camera locates the code. Holds no data.', 'Separator: quiet border around a finder.', 'Timing stripe: helps count rows and columns.', 'Alignment pattern: helps with bent or tilted codes.', 'Format info: which repair level + mask were used (stored twice).', 'Version info: the size of the code.', 'Always-dark module.'];
-function describe(){
-  const [x, y] = hoverPt.map(Math.floor);
-  if (x < 0 || y < 0 || x >= size || y >= size){ $('#hover').textContent = 'Hover a square to see what it is'; return; }
-  const i = y * size + x, t = types[i];
-  let s = `row ${y}, col ${x} · `;
-  if (t) s += TYPE_NAME[t];
-  else if (cwmap[i] < 0) s += 'Leftover filler bit.';
-  else { const c = cwmap[i], [b, idx] = enc.origin[c], dl = enc.blocks[b].data.length;
-    s += idx < dl ? `Message byte ${idx + 1} of block ${b + 1}` : `Repair byte ${idx - dl + 1} of block ${b + 1}`;
-    s += ` (one of its 8 squares)`; }
-  $('#hover').textContent = s;
-}
-
-// ---------- presets ----------
-const isFinderish = i => types[i] === 1 || types[i] === 2 || types[i] === 5 || types[i] === 7;
-function flip(i){ damage[i] = orig[i] ? 2 : 1; }
-function count8(){ return Math.round(size * size * .08); }
-function preset(name){
-  presetsUsed[name] = S.level;
-  if (name === 'speck'){
-    damage.fill(0);
-    const cand = []; for (let i = 0; i < size * size; i++) if (!isFinderish(i)) cand.push(i);
-    for (let n = count8(), j = 0; j < n; j++){ const r = j + Math.floor(Math.random() * (cand.length - j)); [cand[j], cand[r]] = [cand[r], cand[j]]; flip(cand[j]); }
-  } else if (name === 'blob'){
-    damage.fill(0);
-    const cx = size * (.4 + Math.random() * .25), cy = size * (.4 + Math.random() * .25);
-    const cand = []; for (let i = 0; i < size * size; i++) if (!isFinderish(i)) cand.push(i);
-    cand.sort((a, b) => ((a % size + .5 - cx) ** 2 + ((a / size | 0) + .5 - cy) ** 2) - ((b % size + .5 - cx) ** 2 + ((b / size | 0) + .5 - cy) ** 2));
-    cand.slice(0, count8()).forEach(flip);
-  } else if (name === 'logo'){
-    const w = Math.round(size * .3), o = Math.floor((size - w) / 2);
-    for (let y = o; y < o + w; y++) for (let x = o; x < o + w; x++) damage[y * size + x] = 2;
-  } else if (name === 'corner'){
-    const cx = size - 4;
-    for (let y = 2; y <= 4; y++) for (let x = cx - 1; x <= cx + 1; x++) damage[y * size + x] = 2;
-  } else damage.fill(0);
-  update();
-}
-$('#pSpeck').onclick = () => preset('speck');
-$('#pBlob').onclick = () => preset('blob');
-$('#pLogo').onclick = () => preset('logo');
-$('#pCorner').onclick = () => preset('corner');
-$('#pReset').onclick = () => preset('reset');
-
-// ---------- panel ----------
-const coverPct = () => damage.reduce((a, d) => a + (d ? 1 : 0), 0) / (size * size) * 100;
-function panel(){
-  const cover = coverPct(), nHit = cwHit.filter(Boolean).length, nFixed = dec.blocks ? dec.blocks.reduce((a, b) => a + b.positions.length, 0) : 0;
-  const ok = dec.ok, wrong = ok && dec.text !== S.text;
-  if (ok && !wrong) best[S.level] = Math.max(best[S.level], cover);
-  $('#phone').className = 'phone ' + (ok && !wrong ? 'ok' : 'bad');
-  $('#verdict').textContent = !ok ? 'Can’t scan' : wrong ? 'Scans… the WRONG text' : nFixed ? `Scans ✓ (repaired ${nFixed} byte${nFixed > 1 ? 's' : ''})` : 'Scans ✓';
-  $('#decoded').textContent = ok ? dec.text : '—';
-  $('#mini').className = ok && !wrong ? 'ok' : 'bad';
-  $('#mini').textContent = $('#verdict').textContent + (ok ? ' · ' + dec.text : '');
-  $('#why').innerHTML = explain(cover, nHit, nFixed, wrong);
-  const st = ['locate', 'format', 'fix', 'parse', 'done'], at = st.indexOf(dec.stage);
-  $('#pipe').innerHTML = ['Find corners', 'Read format', 'Read bytes', 'Fix errors', 'Decode text'].map((n, i) => {
-    let cls = '';
-    if (dec.ok) cls = 'g';
-    else { const failAt = dec.stage === 'fix' ? 3 : dec.stage === 'parse' ? 4 : at; cls = i < failAt ? 'g' : i === failAt ? 'r' : ''; }
-    return `<div class="${cls}">${n}</div>`;
-  }).join('');
-  $('#sCover').textContent = cover.toFixed(1) + '%';
-  $('#sBytes').textContent = `${nHit} / ${enc.origin.length}`;
-  $('#sBest').textContent = best[S.level].toFixed(1) + '%';
-  $('#blocks').innerHTML = enc.blocks.map((b, i) => {
-    const can = b.ec.length >> 1, hit = blockHits[i];
-    const cells = Array.from({length: Math.max(can, hit)}, (_, j) => `<i class="${j < hit ? (j >= can ? 'x' : dec.blocks ? 'f' : 'h') : ''}"></i>`).join('');
-    return `<div class="blk"><span>Block ${i + 1}</span><div class="cells">${cells}</div><span class="n">${hit}/${can} ${hit > can ? '✗' : ''}</span></div>`;
-  }).join('') + `<div style="font-size:13px;color:var(--soft);margin-top:6px">Version ${enc.version} (${size}×${size} squares) · ${enc.payload_bytes} message bytes · ${enc.blocks.length} block${enc.blocks.length > 1 ? 's' : ''} × ${enc.ec_per_block} repair bytes</div>`;
-}
-function explain(cover, nHit, nFixed, wrong){
-  if (dec.stage === 'locate'){
-    const lost = dec.finders.filter(f => !f.found).length;
-    return `You wrecked <b>${lost} corner finder pattern${lost > 1 ? 's' : ''}</b>. Those squares hold <b>no data</b>: they're how the camera spots the code and works out its size and angle. Without them the scanner never even reaches the error correction, so ${cover.toFixed(1)}% damage was enough.`;
-  }
-  if (dec.stage === 'format') return `Both copies of the 15-bit <b>format info</b> (next to the corners) are too damaged. Without it the scanner doesn't know which mask to undo or how many repair bytes there are.`;
-  if (dec.stage === 'fix'){
-    const b = dec.blocks.findIndex(x => x.status === 'failed');
-    return `Block ${b + 1} has more damaged bytes than its budget of <b>${dec.blocks[b].can_fix}</b>. Reed–Solomon can fix up to half as many bytes as it has repair bytes, because for each error it must work out two things: where it is, and what it should be.`;
-  }
-  if (dec.stage === 'parse') return 'The bytes passed the repair step but the content doesn’t make sense: ' + (dec.error || '');
-  if (wrong) return 'So much damage that the corrector "fixed" it towards a different valid code. Rare, but real: error correction can be fooled when damage goes far past its budget.';
-  if (!nHit) return `No bytes damaged. ${enc.ec_per_block * enc.blocks.length} of the ${enc.origin.length} bytes in this code are <b>repair bytes</b>, computed from your message by polynomial division. Now spill some coffee.`;
-  if (!nFixed) return `Your paint only covered squares that were already that colour, so no bytes actually changed.`;
-  return `The scanner found <b>${nFixed} wrong byte${nFixed > 1 ? 's' : ''}</b> on its own (green). Nobody told it where the coffee was. It solved for the positions and the correct values using the repair bytes.`;
-}
-
-// ---------- challenges ----------
-function tick(id){ if (!done[id]){ done[id] = true; $('#' + id).classList.add('done'); } insight(); }
-function challenges(){
-  const cover = coverPct(), nFixed = dec.blocks ? dec.blocks.reduce((a, b) => a + b.positions.length, 0) : 0;
-  if (dec.ok && nFixed >= 3 && cover >= 4) tick('c1');
-  if (dec.stage === 'fix' && !dec.ok) tick('c2');
-  if (dec.ok && S.level === 'H' && cover >= 15) tick('c3');
-  if (!dec.ok && cover < 3 && cover > 0) tick('c4');
-  if (presetsUsed.speck && presetsUsed.speck === presetsUsed.blob) tick('c5');
-  insight();
-}
-function insight(){
-  let t = 'The thing worth noticing: <b>the scanner is never told where the damage is.</b> The spare bytes let it work that out.';
-  if (done.c4) t = 'So a QR code has two kinds of parts. <b>Data squares are protected by math</b>: lose some, and the decoder recomputes them. <b>The corner squares are protected by nothing</b>: they hold no data, they are how the camera finds the code. A tiny scratch there beats a huge spill elsewhere.';
-  if (done.c5) t += ' And damage is counted in <b>bytes, not squares</b>: a blob ruins a few bytes completely, while the same number of speckles touches many more bytes. That is why a coffee ring is less harmful than a sprinkle of crumbs.';
-  if (done.c3) t += ' Level H is why restaurant QR codes can have a logo pasted in the middle: about 30% of the code is spare.';
-  $('#insight').innerHTML = t;
-}
-
-// ---------- bytes view ----------
-const hex = v => v.toString(16).padStart(2, '0');
-function bytesView(){
-  if (!dec || !$('#dBytes').open) return;
-  const fs = fixedSet()[0];
-  $('#byteView').innerHTML = enc.blocks.map((b, bi) => {
-    const read = dec.blocks ? dec.blocks[bi].read : null, all = b.data.concat(b.ec);
-    const idx2cw = {}; enc.origin.forEach(([bb, ii], c) => { if (bb === bi) idx2cw[ii] = c; });
-    const cells = all.map((v, i) => {
-      const c = idx2cw[i], hit = cwHit[c], fx = fs.has(c), rv = read ? read[i] : v;
-      const tip = `${i < b.data.length ? 'Message' : 'Repair'} byte · original 0x${hex(v)}${hit && read ? ` · scanner read 0x${hex(rv)}` : ''}${fx ? ' · corrected ✓' : ''}`;
-      return `<span class="${i < b.data.length ? 'd' : 'e'}${hit ? ' hit' : ''}${fx ? ' fx' : ''}" title="${tip}">${hex(rv)}</span>`;
-    }).join('');
-    const syn = dec.blocks ? dec.blocks[bi].syndromes.map(s => s ? `<em>${hex(s)}</em>` : '00').join(' ') : '(scanner stopped before reading bytes)';
-    return `<h3 style="font-size:16px;margin-top:12px">Block ${bi + 1} <span style="font-weight:500;font-size:14px;color:var(--soft)">${b.data.length} message + ${b.ec.length} repair bytes · ${dec.blocks ? dec.blocks[bi].status : 'not read'}</span></h3><div class="bytes">${cells}</div><div class="synd">syndromes: ${syn}</div>`;
-  }).join('');
-}
-$('#dBytes').addEventListener('toggle', bytesView);
-
-// ---------- masks ----------
-function drawGrid(c, str, n){
-  const g = c.getContext('2d'), k = c.width / n; g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.fillStyle = '#15110e';
-  for (let i = 0; i < n * n; i++) if (str[i] === '1') g.fillRect((i % n) * k, (i / n | 0) * k, k, k);
-}
-function drawMasks(){
-  const items = enc.mask_grids.map((g, m) => ({g, m, p: enc.penalties[m]})).concat([{g: enc.unmasked, m: -2, p: enc.unmasked_penalty}]);
-  $('#masks').innerHTML = items.map(it => `<button class="mk${it.m === enc.mask ? ' sel' : ''}${it.m === enc.auto_mask ? ' best' : ''}" data-m="${it.m}" ${it.m === -2 ? 'disabled' : ''}><canvas width="${size * 3}" height="${size * 3}"></canvas><b>${it.m === -2 ? 'No mask' : 'Mask ' + it.m}</b><br>penalty ${it.p.total}</button>`).join('');
-  [...$('#masks').querySelectorAll('canvas')].forEach((c, j) => drawGrid(c, items[j].g, size));
-  $('#masks').querySelectorAll('.mk:not([disabled])').forEach(b => b.onclick = () => { S.mask = +b.dataset.m; encodeNow(true); });
-  $('#maskNote').textContent = `Using mask ${enc.mask}: ${enc.mask_formulas[enc.mask]}${enc.mask === enc.auto_mask ? ' (lowest penalty)' : ' (forced)'}`;
-  const rows = [['Runs of 5+ same-colour squares', 'n1'], ['2×2 same-colour boxes', 'n2'], ['Finder look-alikes (1:1:3:1:1)', 'n3'], ['Dark/light imbalance', 'n4'], ['Total', 'total']];
-  $('#penTable').innerHTML = `<table><tr><th>Penalty rule</th><th>No mask</th><th>Mask ${enc.mask}</th></tr>${rows.map(([n, k]) => `<tr><td>${n}</td><td class="r">${enc.unmasked_penalty[k]}</td><td class="r">${enc.penalties[enc.mask][k]}</td></tr>`).join('')}</table>`;
-}
-$('#autoMask').onclick = () => { S.mask = -1; encodeNow(true); };
-
-// ---------- math ----------
-const SUP = n => String(n).split('').map(d => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d]).join('');
-function drawMath(){
-  const e = enc.generator_exps, n = e.length - 1;
-  const terms = e.map((a, i) => `α${SUP(a)}x${SUP(n - i)}`).slice(0, 6).join(' + ');
-  const b = enc.blocks[0];
-  $('#mathView').innerHTML = `<p><b>Generator</b> for ${n} repair bytes: g(x) = ${terms} + … (${n + 1} terms)</p>
-  <p><b>Block 1 message bytes</b> (polynomial coefficients): ${b.data.map(hex).join(' ')}</p>
-  <p><b>Remainder → repair bytes</b>: ${b.ec.map(hex).join(' ')}</p>`;
-}
-
-// ---------- controls ----------
-let typingT;
-$('#msg').addEventListener('input', e => { clearTimeout(typingT); typingT = setTimeout(() => { S.text = e.target.value; if (enc) encodeNow(false); }, 120); });
-$('#levels').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || !enc) return; S.level = b.dataset.l; encodeNow(false); });
-$('#toolSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; S.tool = b.dataset.t; for (const x of $('#toolSeg').children) x.classList.toggle('on', x === b); });
-$('#bsize').addEventListener('input', e => S.brush = +e.target.value);
-for (const id of ['#oFixed', '#oAnat', '#oBytes']) $(id).addEventListener('change', () => { $('#legend').classList.toggle('show', $('#oAnat').checked); if (enc) render(); });
-
-// ---------- independent second opinion (jsQR) ----------
-let jt;
-function scheduleJsqr(){ clearTimeout(jt); jt = setTimeout(runJsqr, 180); }
-function runJsqr(){
-  if (typeof jsQR !== 'function'){ $('#jsqr').textContent = 'Second opinion unavailable (jsQR did not load).'; return; }
-  const k = 6, n = size + 8, c = document.createElement('canvas'); c.width = c.height = n * k;
-  const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.fillStyle = '#000';
-  for (let i = 0; i < size * size; i++) if (eff[i]) g.fillRect((i % size + 4) * k, ((i / size | 0) + 4) * k, k, k);
-  const r = jsQR(g.getImageData(0, 0, c.width, c.height).data, c.width, c.height, {inversionAttempts: 'dontInvert'});
-  $('#jsqr').innerHTML = `Second opinion from <b>jsQR</b>, an independent open-source scanner reading the same pixels: ${r ? `<b style="color:var(--ok)">reads it</b> (“${r.data.replace(/[<&]/g, ' ')}”)` : `<b style="color:var(--bad)">can’t read it</b>`}. Real scanners differ a little, mostly in how much corner damage they tolerate.`;
-}
-
-boot();
-}
-</script>
+  </script>
 </body>
 </html>
