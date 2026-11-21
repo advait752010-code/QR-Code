@@ -248,23 +248,6 @@
 </head>
 <body class="selection:bg-indigo-500/20 pb-16 md:pb-10">
 
-  <!-- Pyodide Loading Overlay -->
-  <div id="loader" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-6 text-center">
-    <div class="max-w-md w-full bg-[#1C1C1F] border border-[#2E2E32] rounded-2xl p-8 shadow-2xl">
-      <div class="w-12 h-12 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center mx-auto mb-5">
-        <i data-lucide="cpu" class="w-6 h-6 text-indigo-400 animate-pulse"></i>
-      </div>
-      <h2 class="text-lg font-semibold text-[#F4F4F5] tracking-tight">Initializing Python Engine…</h2>
-      <p class="text-sm text-[#A1A1AA] mt-2 leading-relaxed">
-        Loading our from-scratch Galois Field &amp; Reed–Solomon decoder (<code class="text-[#F4F4F5] font-mono text-xs">qr_engine.py</code>) inside your browser via WebAssembly.
-      </p>
-      <div class="mt-5 h-1.5 w-full bg-[#2E2E32] rounded-full overflow-hidden">
-        <div class="h-full bg-indigo-500 rounded-full w-2/3 animate-pulse"></div>
-      </div>
-      <p id="loadErr" class="text-xs text-rose-400 mt-3 font-medium"></p>
-    </div>
-  </div>
-
   <!-- Top Navigation / Hero Band -->
   <header class="theme-surface border-b" style="box-shadow: none;">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10">
@@ -297,11 +280,11 @@
         </div>
       </div>
 
-      <h1 class="theme-text-primary text-3xl sm:text-4xl font-bold tracking-tight max-w-3xl">
+      <h1 class="theme-text-primary text-3xl sm:text-4xl font-bold tracking-tight">
         Spill coffee on a QR code. Why does it still scan?
       </h1>
-      <p class="theme-text-secondary mt-3 text-base max-w-3xl leading-relaxed">
-        A QR code isn't just your text drawn as squares. Up to 30% of it is <span class="theme-text-primary font-semibold">redundant polynomial parity data</span>, letting a scanner locate damaged bytes and algebraically reconstruct what they used to be—without being told where the spill happened.
+      <p class="theme-text-secondary mt-3 text-base leading-relaxed">
+        A QR code isn't just your text drawn as squares. Up to 30% of it is <span class="theme-text-primary font-semibold">redundant polynomial parity data</span>, letting a scanner locate damaged bytes and algebraically reconstruct what they used to be—without ever being told where the spill happened or which modules were corrupted.
       </p>
 
       <!-- 3-Step Quick Guide Pills -->
@@ -473,14 +456,14 @@
         <div id="phone" class="rounded-xl p-5 border transition-colors"
              style="background-color: var(--ok-bg); border-color: var(--ok-border);">
           <div class="flex items-center justify-between gap-3">
-            <div class="verdict text-xl sm:text-2xl font-bold tracking-tight" id="verdict" style="color: var(--ok-text);">Initializing…</div>
+            <div class="verdict text-xl sm:text-2xl font-bold tracking-tight" id="verdict" style="color: var(--ok-text);">Starting Python engine…</div>
             <div id="verdictIcon" class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                  style="background-color: var(--ok-badge); color: var(--ok-text);">
               <i data-lucide="check-circle-2" class="w-5 h-5"></i>
             </div>
           </div>
-          <div id="decoded" class="theme-surface theme-text-primary mt-3 px-3.5 py-2.5 rounded-lg border font-mono text-sm font-medium break-all" style="box-shadow: none;"></div>
-          <p id="why" class="theme-text-secondary mt-3 text-sm leading-relaxed"></p>
+          <div id="decoded" class="theme-surface theme-text-primary mt-3 px-3.5 py-2.5 rounded-lg border font-mono text-sm font-medium break-all" style="box-shadow: none;">https://example.com/menu?table=12</div>
+          <p id="why" class="theme-text-secondary mt-3 text-sm leading-relaxed">Loading our from-scratch Galois Field &amp; Reed–Solomon decoder in the background…</p>
         </div>
 
         <!-- 5-Stage Decoding Pipeline -->
@@ -796,6 +779,7 @@
 
     async function boot() {
       try {
+        $('#verdict').textContent = 'Starting Python engine…';
         const py = await loadPyodide({indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/'});
         let srcUrl = 'qr_engine.py', res = await fetch(srcUrl).catch(() => null);
         if (!res || !res.ok) { srcUrl = 'qr_engine.txt'; res = await fetch(srcUrl); }
@@ -805,9 +789,9 @@
         apiEncode = py.globals.get('api_encode');
         apiDecode = py.globals.get('api_decode');
         encodeNow(false);
-        $('#loader').remove();
       } catch (e) {
-        $('#loadErr').textContent = 'Could not start Python engine: ' + e.message + '. Please reload.';
+        $('#verdict').textContent = 'Engine failed to load';
+        $('#why').textContent = 'Could not start Python engine: ' + e.message + '. Please reload.';
       }
     }
 
@@ -1010,6 +994,7 @@
     function flip(i) { damage[i] = orig[i] ? 2 : 1; }
     function count8() { return Math.round(size * size * 0.08); }
     function preset(name) {
+      if (!enc) return;
       presetsUsed[name] = S.level;
       if (name === 'speck') {
         damage.fill(0);
@@ -1230,7 +1215,7 @@
         <tbody class="divide-y theme-border">${rows.map(([n, k], idx) => `<tr class="${idx === 4 ? 'font-bold theme-text-primary theme-elevated' : 'theme-text-secondary'}"><td class="py-2 pr-4">${n}</td><td class="py-2 px-4 text-right font-mono">${enc.unmasked_penalty[k]}</td><td class="py-2 pl-4 text-right font-mono">${enc.penalties[enc.mask][k]}</td></tr>`).join('')}</tbody>
       </table>`;
     }
-    $('#autoMask').onclick = () => { S.mask = -1; encodeNow(true); };
+    $('#autoMask').onclick = () => { if (!enc) return; S.mask = -1; encodeNow(true); };
 
     // ---------- Math View ----------
     const SUP = n => String(n).split('').map(d => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d]).join('');
@@ -1297,6 +1282,7 @@
     }
 
     styleControls();
+    insight();
     boot();
   }
   </script>
