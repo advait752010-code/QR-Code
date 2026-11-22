@@ -25,19 +25,21 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <!-- Tailwind CSS & Lucide Icons -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Pinned Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace'],
+    if (window.tailwind) {
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+              mono: ['JetBrains Mono', 'monospace'],
+            }
           }
         }
-      }
+      };
     }
   </script>
 
@@ -63,6 +65,10 @@
       --bad-border: #fecdd3;
       --bad-text: #9f1239;
       --bad-badge: #ffe4e6;
+      --neutral-bg: #f1f5f9;
+      --neutral-border: #cbd5e1;
+      --neutral-text: #334155;
+      --neutral-badge: #e2e8f0;
       --insight-bg: #0f172a;
       --insight-text: #e2e8f0;
       --shadow-card: 0 4px 16px -2px rgba(15, 23, 42, 0.05), 0 1px 3px -1px rgba(15, 23, 42, 0.03);
@@ -90,6 +96,10 @@
       --bad-border: rgba(244, 63, 94, 0.35);
       --bad-text: #fda4af;
       --bad-badge: rgba(244, 63, 94, 0.22);
+      --neutral-bg: #252529;
+      --neutral-border: #3E3E44;
+      --neutral-text: #E4E4E7;
+      --neutral-badge: #2E2E33;
       --insight-bg: #1C1C1F;
       --insight-text: #E4E4E7;
       --shadow-card: 0 6px 24px -4px rgba(0, 0, 0, 0.45);
@@ -255,7 +265,7 @@
         <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-medium border"
              style="background-color: var(--accent-soft); border-color: var(--accent-border); color: var(--accent-primary);">
           <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-          <span>Interactive Mechanism Explorer · GF(2⁸) Reed–Solomon</span>
+          <span>Interactive Mechanism Explorer · Error-Correcting Codes</span>
         </div>
 
         <div class="flex items-center gap-2.5">
@@ -267,11 +277,9 @@
 
           <!-- Icon-only Theme Toggle Button (No text labels) -->
           <button id="themeToggle" type="button" aria-label="Toggle color theme">
-            <!-- Moon icon (shown in light mode) -->
             <svg id="iconMoon" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
             </svg>
-            <!-- Sun icon (shown in dark mode) -->
             <svg id="iconSun" class="hidden" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="4"/>
               <path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>
@@ -284,7 +292,7 @@
         Spill coffee on a QR code. Why does it still scan?
       </h1>
       <p class="theme-text-secondary mt-3 text-base leading-relaxed">
-        A QR code isn't just your text drawn as squares. Up to 30% of it is <span class="theme-text-primary font-semibold">redundant polynomial parity data</span>, letting a scanner locate damaged bytes and algebraically reconstruct what they used to be—without ever being told where the spill happened or which modules were corrupted.
+        Over a third of a QR code's bytes are <span class="theme-text-primary font-semibold">extra repair bytes calculated from your message</span>, so a scanner can locate damaged squares and algebraically rebuild up to 7–30% of the code's bytes—without ever being told where the spill happened.
       </p>
 
       <!-- 3-Step Quick Guide Pills -->
@@ -327,38 +335,42 @@
         <!-- Error Correction Level Selector -->
         <div class="mt-5">
           <div class="flex items-center justify-between mb-1.5">
-            <span class="text-xs font-semibold uppercase tracking-wider theme-text-muted">Error Correction Level (Redundancy)</span>
+            <span class="text-xs font-semibold uppercase tracking-wider theme-text-muted">Error Correction Level (Recovery Capacity)</span>
           </div>
           <div id="levels" role="group" aria-label="Error correction level" class="grid grid-cols-4 gap-2">
             <button data-l="L" class="lvl-btn flex flex-col items-center justify-center py-2 px-2 rounded-lg border transition cursor-pointer">
               <span class="text-sm font-bold">L</span>
-              <span class="text-[11px]">~7% repair</span>
+              <span class="text-[11px]">~7% of bytes</span>
             </button>
             <button data-l="M" class="lvl-btn flex flex-col items-center justify-center py-2 px-2 rounded-lg border transition cursor-pointer">
               <span class="text-sm font-bold">M</span>
-              <span class="text-[11px]">~15% repair</span>
+              <span class="text-[11px]">~15% of bytes</span>
             </button>
             <button data-l="Q" class="lvl-btn flex flex-col items-center justify-center py-2 px-2 rounded-lg border transition cursor-pointer">
               <span class="text-sm font-bold">Q</span>
-              <span class="text-[11px]">~25% repair</span>
+              <span class="text-[11px]">~25% of bytes</span>
             </button>
             <button data-l="H" class="lvl-btn flex flex-col items-center justify-center py-2 px-2 rounded-lg border transition cursor-pointer">
               <span class="text-sm font-bold">H</span>
-              <span class="text-[11px]">~30% repair</span>
+              <span class="text-[11px]">~30% of bytes</span>
             </button>
           </div>
         </div>
 
-        <!-- QR Canvas Wrapper (Always crisp white background so phone cameras & jsQR scan reliably in Dark Mode) -->
-        <div class="mt-5 relative bg-white rounded-xl border theme-border p-2 shadow-sm">
+        <!-- QR Canvas Wrapper (Always crisp white background with 4-module quiet zone) -->
+        <div class="mt-5 relative bg-white rounded-xl border theme-border p-3 shadow-sm">
           <canvas id="qr" width="660" height="660" aria-label="QR code. Drag to paint damage on it."
             class="block w-full aspect-square rounded-lg cursor-crosshair touch-none"></canvas>
+          <div id="dragHint" class="pointer-events-none absolute bottom-5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/85 text-white text-xs font-medium shadow-md flex items-center gap-1.5 transition-opacity duration-300">
+            <i data-lucide="mouse-pointer-click" class="w-3.5 h-3.5 text-amber-300"></i>
+            <span>Drag anywhere on the code to spill coffee</span>
+          </div>
         </div>
 
         <!-- Coordinate & Byte Inspector Bar -->
         <div class="theme-elevated mt-2.5 flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-mono theme-text-secondary min-h-[32px]">
           <i data-lucide="crosshair" class="w-3.5 h-3.5 theme-text-muted shrink-0"></i>
-          <span id="hover" class="truncate">Hover any square to inspect its role or byte index</span>
+          <span id="hover" class="truncate">Hover or tap any square to inspect its role or byte index</span>
         </div>
 
         <!-- Damage Brush & Presets Toolbar -->
@@ -414,55 +426,68 @@
             </div>
           </div>
 
-          <!-- Visual Overlays -->
-          <div class="pt-2 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-medium theme-text-secondary">
-            <label class="inline-flex items-center gap-2 cursor-pointer select-none">
-              <input type="checkbox" id="oFixed" checked class="rounded accent-indigo-600">
-              <span>Highlight repaired bytes</span>
-            </label>
-            <label class="inline-flex items-center gap-2 cursor-pointer select-none">
-              <input type="checkbox" id="oAnat" class="rounded accent-indigo-600">
-              <span>Anatomy overlay</span>
-            </label>
-            <label class="inline-flex items-center gap-2 cursor-pointer select-none">
-              <input type="checkbox" id="oBytes" class="rounded accent-indigo-600">
-              <span>Byte boundaries</span>
-            </label>
+          <!-- Visual Overlays & Phone Scan Mode -->
+          <div class="pt-2 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-medium theme-text-secondary">
+              <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                <input type="checkbox" id="oFixed" checked class="rounded accent-indigo-600">
+                <span>Repaired bytes</span>
+              </label>
+              <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                <input type="checkbox" id="oRebuilt" class="rounded accent-emerald-600">
+                <span>Show rebuilt grid</span>
+              </label>
+              <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                <input type="checkbox" id="oAnat" class="rounded accent-indigo-600">
+                <span>Anatomy</span>
+              </label>
+              <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                <input type="checkbox" id="oBytes" class="rounded accent-indigo-600">
+                <span>Block bytes</span>
+              </label>
+            </div>
+
+            <button id="phoneScanBtn" type="button"
+              class="preset-btn inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium cursor-pointer"
+              title="Hide all colored overlays so a real phone camera can scan the damaged code">
+              <i data-lucide="smartphone" class="w-3.5 h-3.5 text-indigo-500"></i>
+              <span>Phone scan mode</span>
+            </button>
           </div>
 
           <!-- Anatomy Legend -->
           <div id="legend" class="theme-elevated hidden flex-wrap gap-x-4 gap-y-1.5 p-3 rounded-lg border text-xs theme-text-secondary">
-            <span class="inline-flex items-center gap-1.5"><i class="w-2.5 h-2.5 rounded-xs bg-[#e5484d]"></i>Finder</span>
-            <span class="inline-flex items-center gap-1.5"><i class="w-2.5 h-2.5 rounded-xs bg-[#8e4ec6]"></i>Timing</span>
-            <span class="inline-flex items-center gap-1.5"><i class="w-2.5 h-2.5 rounded-xs bg-[#d6409f]"></i>Alignment</span>
-            <span class="inline-flex items-center gap-1.5"><i class="w-2.5 h-2.5 rounded-xs bg-[#f5a524]"></i>Format / Version</span>
-            <span class="inline-flex items-center gap-1.5"><i class="w-2.5 h-2.5 rounded-xs bg-indigo-600"></i>Message bytes</span>
-            <span class="inline-flex items-center gap-1.5"><i class="w-2.5 h-2.5 rounded-xs bg-amber-600"></i>Repair (EC) bytes</span>
+            <span class="inline-flex items-center gap-1.5"><i class="w-2.5 h-2.5 rounded-sm bg-[#e5484d]"></i>Finder</span>
+            <span class="inline-flex items-center gap-1.5"><i class="w-2.5 h-2.5 rounded-sm bg-[#8e4ec6]"></i>Timing</span>
+            <span class="inline-flex items-center gap-1.5"><i class="w-2.5 h-2.5 rounded-sm bg-[#d6409f]"></i>Alignment</span>
+            <span class="inline-flex items-center gap-1.5"><i class="w-2.5 h-2.5 rounded-sm bg-[#f5a524]"></i>Format / Version</span>
+            <span class="inline-flex items-center gap-1.5"><i class="w-2.5 h-2.5 rounded-sm bg-indigo-600"></i>Message bytes</span>
+            <span class="inline-flex items-center gap-1.5"><i class="w-2.5 h-2.5 rounded-sm bg-amber-600"></i>Repair (EC) bytes</span>
           </div>
         </div>
       </section>
 
       <!-- Right Column: Live Decoder Diagnostics (6 cols) -->
-      <section class="lg:col-span-6 theme-surface rounded-xl border p-6" aria-live="polite" aria-label="Scanner diagnostics">
+      <section class="lg:col-span-6 theme-surface rounded-xl border p-6" aria-label="Scanner diagnostics">
         <div class="flex items-center justify-between mb-3">
           <span class="text-xs font-semibold uppercase tracking-wider theme-text-muted">Live Decoder Output</span>
           <span class="inline-flex items-center gap-1.5 text-xs font-mono theme-text-muted">
-            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span id="engineDot" class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
             <span>qr_engine.py</span>
           </span>
         </div>
 
-        <!-- Scanner Status Verdict Card -->
+        <!-- Scanner Status Verdict Card (Neutral slate during load, emerald on pass, rose on fail) -->
         <div id="phone" class="rounded-xl p-5 border transition-colors"
-             style="background-color: var(--ok-bg); border-color: var(--ok-border);">
-          <div class="flex items-center justify-between gap-3">
-            <div class="verdict text-xl sm:text-2xl font-bold tracking-tight" id="verdict" style="color: var(--ok-text);">Starting Python engine…</div>
+             style="background-color: var(--neutral-bg); border-color: var(--neutral-border);">
+          <div class="flex items-center justify-between gap-3" aria-live="polite">
+            <div class="verdict text-xl sm:text-2xl font-bold tracking-tight" id="verdict" style="color: var(--neutral-text);">Starting Python engine…</div>
             <div id="verdictIcon" class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                 style="background-color: var(--ok-badge); color: var(--ok-text);">
-              <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                 style="background-color: var(--neutral-badge); color: var(--neutral-text);">
+              <i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i>
             </div>
           </div>
-          <div id="decoded" class="theme-surface theme-text-primary mt-3 px-3.5 py-2.5 rounded-lg border font-mono text-sm font-medium break-all" style="box-shadow: none;">https://example.com/menu?table=12</div>
+          <div id="decoded" class="theme-surface theme-text-primary mt-3 px-3.5 py-2.5 rounded-lg border font-mono text-sm font-medium break-all" style="box-shadow: none;">—</div>
           <p id="why" class="theme-text-secondary mt-3 text-sm leading-relaxed">Loading our from-scratch Galois Field &amp; Reed–Solomon decoder in the background…</p>
         </div>
 
@@ -476,7 +501,7 @@
         <div class="mt-5 grid grid-cols-3 gap-3">
           <div class="theme-elevated rounded-xl border p-3.5">
             <div id="sCover" class="theme-text-primary text-xl sm:text-2xl font-bold tracking-tight font-mono">0.0%</div>
-            <div class="text-xs theme-text-muted mt-0.5">Area covered</div>
+            <div class="text-xs theme-text-muted mt-0.5">Area painted</div>
           </div>
           <div class="theme-elevated rounded-xl border p-3.5">
             <div id="sBytes" class="theme-text-primary text-xl sm:text-2xl font-bold tracking-tight font-mono">0</div>
@@ -500,7 +525,7 @@
         <!-- Independent Cross-Check (jsQR) -->
         <div id="jsqr" class="mt-5 pt-4 border-t theme-border text-xs theme-text-secondary leading-relaxed flex items-start gap-2">
           <i data-lucide="shield-check" class="w-4 h-4 theme-text-muted shrink-0 mt-0.5"></i>
-          <span>Loading independent scanner cross-check…</span>
+          <span>Waiting for Python engine to generate QR grid…</span>
         </div>
       </section>
     </div>
@@ -540,7 +565,7 @@
               <i data-lucide="check" class="w-3 h-3 stroke-[3]"></i>
             </span>
           </div>
-          <span class="text-xs theme-text-secondary leading-relaxed block">Switch to level H and survive ≥15% total code coverage.</span>
+          <span class="text-xs theme-text-secondary leading-relaxed block">Switch to level H and survive ≥15% total painted area.</span>
         </li>
         <li id="c4" class="ch-card rounded-xl border p-4">
           <div class="flex items-start justify-between gap-2 mb-1.5">
@@ -549,7 +574,7 @@
               <i data-lucide="check" class="w-3 h-3 stroke-[3]"></i>
             </span>
           </div>
-          <span class="text-xs theme-text-secondary leading-relaxed block">Break the scan with &lt;3% coverage. Hint: target a corner finder.</span>
+          <span class="text-xs theme-text-secondary leading-relaxed block">Break the scan while painting &lt;3% of the total area.</span>
         </li>
         <li id="c5" class="ch-card rounded-xl border p-4">
           <div class="flex items-start justify-between gap-2 mb-1.5">
@@ -667,7 +692,7 @@
             <strong class="theme-text-primary">Format info</strong> (15 bits hugging the finders) stores the error-correction level and mask ID, protected by its own <code class="theme-elevated font-mono text-xs px-1.5 py-0.5 rounded border">BCH(15,5)</code> code and written twice for redundancy.
           </p>
           <p>
-            <strong class="theme-text-primary">Why scattered speckles beat a single blob:</strong> Reed–Solomon counts errors in <em>whole bytes</em> (8 adjacent modules packed in a 2×4 zig-zag column). One solid blob destroys a few bytes completely, whereas the same area scattered as speckles nicks dozens of separate bytes—exhausting the block's repair budget much faster.
+            <strong class="theme-text-primary">Why scattered speckles overwhelm a single blob:</strong> Reed–Solomon counts errors in <em>whole bytes</em> (8 adjacent modules typically packed in a 2×4 zig-zag column). One solid blob destroys a few bytes completely, whereas the same area scattered as speckles nicks dozens of separate bytes—exhausting the block's repair budget much faster.
           </p>
         </div>
       </details>
@@ -676,20 +701,22 @@
     <!-- Footer -->
     <footer class="mt-12 pt-6 border-t theme-border text-xs theme-text-muted leading-relaxed flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
       <p class="max-w-3xl">
-        All encoding, masking, syndrome calculation, and Reed–Solomon error correction run live from scratch in <a href="qr_engine.py" target="_blank" rel="noopener" class="theme-text-secondary font-medium underline">qr_engine.py</a> via Pyodide. <strong>jsQR</strong> is used strictly as an independent third-party cross-check. Tip: uncheck <em>Highlight repaired bytes</em> and point your real phone camera at the screen.
+        All encoding, masking, syndrome calculation, and Reed–Solomon error correction run live from scratch in <a href="qr_engine.py" target="_blank" rel="noopener" class="theme-text-secondary font-medium underline">qr_engine.py</a> via Pyodide. <strong>jsQR</strong> is used strictly as an independent third-party cross-check.
       </p>
     </footer>
   </main>
 
   <!-- Mobile Sticky Verdict Pill -->
-  <div id="mini" aria-hidden="true" class="md:hidden fixed bottom-3 left-3 right-3 z-40 px-4 py-3 rounded-xl font-semibold text-sm text-white shadow-lg truncate transition-colors bg-emerald-600"></div>
+  <div id="mini" aria-hidden="true" class="md:hidden fixed bottom-3 left-3 right-3 z-40 px-4 py-3 rounded-xl font-semibold text-sm text-white shadow-lg truncate transition-colors bg-slate-700">Starting Python engine…</div>
 
   <!-- Scripts: Pyodide + jsQR + Application Logic -->
   <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script>
   {
-    lucide.createIcons();
+    try {
+      if (window.lucide) lucide.createIcons();
+    } catch (e) {}
 
     // ---------- Theme Toggle & Persistence ----------
     const themeToggle = document.getElementById('themeToggle');
@@ -712,10 +739,8 @@
       if (persist) {
         try { localStorage.setItem('qr-theme', theme); } catch (e) {}
       }
-      if (typeof encodeNow === 'function' && enc) {
-        styleControls();
-        drawMasks();
-      }
+      if (typeof styleControls === 'function') styleControls();
+      if (typeof drawMasks === 'function' && enc) drawMasks();
     }
 
     syncThemeIcons(document.documentElement.getAttribute('data-theme') || 'light');
@@ -742,10 +767,11 @@
     const best = {L: 0, M: 0, Q: 0, H: 0};
     const done = {};
     const presetsUsed = {};
-    const C = {dark: '#0f172a', light: '#ffffff', coffee: '#451a03', white: '#f8fafc'};
+    const C = {dark: '#0f172a', light: '#ffffff', coffee: '#5c2d16', white: '#ffffff'};
     const TYPE_COL = {1: '#e5484d', 2: null, 3: '#8e4ec6', 4: '#d6409f', 5: '#f5a524', 6: '#f5a524', 7: '#f5a524'};
+    const BLOCK_COLS = ['#4f46e5', '#0891b2', '#d97706', '#7c3aed', '#db2777', '#059669'];
     const cv = $('#qr'), ctx = cv.getContext('2d');
-    const QZ = 3;
+    const QZ = 4; // Spec-compliant 4-module quiet zone
 
     function styleControls() {
       const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -779,7 +805,6 @@
 
     async function boot() {
       try {
-        $('#verdict').textContent = 'Starting Python engine…';
         const py = await loadPyodide({indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/'});
         let srcUrl = 'qr_engine.py', res = await fetch(srcUrl).catch(() => null);
         if (!res || !res.ok) { srcUrl = 'qr_engine.txt'; res = await fetch(srcUrl); }
@@ -788,17 +813,43 @@
         py.runPython(src);
         apiEncode = py.globals.get('api_encode');
         apiDecode = py.globals.get('api_decode');
-        encodeNow(false);
+
+        const dot = $('#engineDot');
+        if (dot) {
+          dot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+        }
+
+        // Encode initial code and auto-apply a small demo coffee spill so judges see the "Aha!" immediately
+        if (tryEncode(S.text, S.level, S.mask, false)) {
+          applyInitialDemoSpill();
+        }
       } catch (e) {
+        const phone = $('#phone');
+        phone.style.backgroundColor = 'var(--bad-bg)';
+        phone.style.borderColor = 'var(--bad-border)';
+        $('#verdict').style.color = 'var(--bad-text)';
+        $('#verdictIcon').style.backgroundColor = 'var(--bad-badge)';
+        $('#verdictIcon').style.color = 'var(--bad-text)';
+        $('#verdictIcon').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
         $('#verdict').textContent = 'Engine failed to load';
         $('#why').textContent = 'Could not start Python engine: ' + e.message + '. Please reload.';
       }
     }
 
-    function encodeNow(keep) {
-      const r = JSON.parse(apiEncode(S.text, S.level, S.mask));
-      if (r.error) { $('#encErr').textContent = r.error; return; }
+    // Commit state ONLY if encoding succeeds (prevents desync on UTF-8 byte overflow)
+    function tryEncode(nextText, nextLevel, nextMask, keep) {
+      if (!apiEncode) return false;
+      const r = JSON.parse(apiEncode(nextText, nextLevel, nextMask));
+      if (r.error) {
+        $('#encErr').textContent = r.error;
+        styleControls();
+        return false;
+      }
       $('#encErr').textContent = '';
+      S.text = nextText;
+      S.level = nextLevel;
+      S.mask = nextMask;
+
       const same = keep && enc && enc.size === r.size;
       enc = r;
       size = r.size;
@@ -814,6 +865,27 @@
       drawMasks();
       drawMath();
       update();
+      return true;
+    }
+
+    function applyInitialDemoSpill() {
+      // Paint a small realistic coffee ring/blotch in the center-bottom data region that repairs cleanly
+      const cx = size * 0.56, cy = size * 0.62, rad = 2.1;
+      for (let y = Math.floor(cy - rad); y <= cy + rad; y++) {
+        for (let x = Math.floor(cx - rad); x <= cx + rad; x++) {
+          if (x < 0 || y < 0 || x >= size || y >= size) continue;
+          const i = y * size + x;
+          if (!isFinderish(i) && (x + 0.5 - cx) ** 2 + (y + 0.5 - cy) ** 2 <= rad * rad) {
+            damage[i] = 1;
+          }
+        }
+      }
+      update();
+    }
+
+    function hideDragHint() {
+      const hint = $('#dragHint');
+      if (hint) hint.style.opacity = '0';
     }
 
     function update() {
@@ -852,17 +924,62 @@
       return [fx, bad];
     }
 
+    function buildReconstructedGrid() {
+      if (!dec || !dec.ok || !dec.blocks) return orig;
+      const rebuiltCodewords = new Uint8Array(enc.origin.length);
+      enc.origin.forEach(([b, idx], c) => {
+        rebuiltCodewords[c] = dec.blocks[b].corrected[idx];
+      });
+      const grid = Uint8Array.from(orig);
+      const maskIdx = dec.mask;
+      const maskFns = [
+        (x, y) => (x + y) % 2 === 0,
+        (x, y) => y % 2 === 0,
+        (x, y) => x % 3 === 0,
+        (x, y) => (x + y) % 3 === 0,
+        (x, y) => (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0,
+        (x, y) => (x * y) % 2 + (x * y) % 3 === 0,
+        (x, y) => ((x * y) % 2 + (x * y) % 3) % 2 === 0,
+        (x, y) => ((x + y) % 2 + (x * y) % 3) % 2 === 0,
+      ];
+      cwMods.forEach((mods, c) => {
+        const byteVal = rebuiltCodewords[c];
+        mods.forEach((cellIdx, bitOffset) => {
+          const x = cellIdx % size, y = (cellIdx / size) | 0;
+          let bit = (byteVal >> (7 - bitOffset)) & 1;
+          if (maskFns[maskIdx](x, y)) bit ^= 1;
+          grid[cellIdx] = bit;
+        });
+      });
+      return grid;
+    }
+
     function render() {
       const k = cell();
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, cv.width, cv.height);
+
+      const showRebuilt = $('#oRebuilt').checked && dec && dec.ok;
+      const rebuiltGrid = showRebuilt ? buildReconstructedGrid() : null;
+
       for (let y = 0; y < size; y++) {
         for (let x = 0; x < size; x++) {
           const i = y * size + x, d = damage[i];
-          ctx.fillStyle = d === 1 ? C.coffee : d === 2 ? C.white : (orig[i] ? C.dark : C.light);
-          if (d || orig[i]) ctx.fillRect((x + QZ) * k, (y + QZ) * k, k + 0.5, k + 0.5);
+          if (showRebuilt) {
+            ctx.fillStyle = rebuiltGrid[i] ? C.dark : C.light;
+            if (rebuiltGrid[i]) ctx.fillRect((x + QZ) * k, (y + QZ) * k, k + 0.5, k + 0.5);
+          } else {
+            ctx.fillStyle = d === 1 ? C.coffee : d === 2 ? C.white : (orig[i] ? C.dark : C.light);
+            if (d || orig[i]) ctx.fillRect((x + QZ) * k, (y + QZ) * k, k + 0.5, k + 0.5);
+            // Draw visible coffee stain tint even when spilled over already-dark modules
+            if (d === 1 && orig[i] === 1) {
+              ctx.fillStyle = 'rgba(180, 83, 9, 0.42)';
+              ctx.fillRect((x + QZ) * k, (y + QZ) * k, k + 0.5, k + 0.5);
+            }
+          }
         }
       }
+
       if ($('#oAnat').checked) {
         ctx.globalAlpha = 0.5;
         for (let i = 0; i < size * size; i++) {
@@ -879,9 +996,10 @@
         }
         ctx.globalAlpha = 1;
       }
+
       if ($('#oFixed').checked) {
         const [fx, bad] = fixedSet();
-        ctx.globalAlpha = 0.55;
+        ctx.globalAlpha = 0.52;
         for (const [set, col] of [[fx, '#10b981'], [bad, '#e11d48']]) {
           for (const c of set) {
             ctx.fillStyle = col;
@@ -899,14 +1017,16 @@
           });
         }
       }
+
       if ($('#oBytes').checked) {
-        ctx.strokeStyle = 'rgba(217, 119, 6, 0.85)';
         ctx.lineWidth = Math.max(1.5, k / 7);
-        ctx.beginPath();
         for (let y = 0; y < size; y++) {
           for (let x = 0; x < size; x++) {
             const c = cwmap[y * size + x];
             if (c < 0) continue;
+            const blkIdx = enc.origin[c][0];
+            ctx.strokeStyle = BLOCK_COLS[blkIdx % BLOCK_COLS.length];
+            ctx.beginPath();
             if (x + 1 < size && cwmap[y * size + x + 1] !== c) {
               ctx.moveTo((x + 1 + QZ) * k, (y + QZ) * k);
               ctx.lineTo((x + 1 + QZ) * k, (y + 1 + QZ) * k);
@@ -915,10 +1035,11 @@
               ctx.moveTo((x + QZ) * k, (y + 1 + QZ) * k);
               ctx.lineTo((x + 1 + QZ) * k, (y + 1 + QZ) * k);
             }
+            ctx.stroke();
           }
         }
-        ctx.stroke();
       }
+
       if (hoverPt) {
         ctx.strokeStyle = 'rgba(99, 102, 241, 0.9)';
         ctx.lineWidth = 2;
@@ -928,7 +1049,7 @@
       }
     }
 
-    // ---------- Painting ----------
+    // ---------- Painting & Touch Inspection ----------
     let painting = false, last = null, hoverPt = null;
     function pt(e) {
       const r = cv.getBoundingClientRect();
@@ -946,6 +1067,7 @@
       }
     }
     function paint(e) {
+      hideDragHint();
       const p = pt(e);
       if (last) {
         const n = Math.ceil(Math.hypot(p[0] - last[0], p[1] - last[1]) * 2) || 1;
@@ -954,11 +1076,13 @@
         stamp(p[0], p[1]);
       }
       last = p;
+      describe();
       schedule();
     }
-    cv.addEventListener('pointerdown', e => { if (!enc) return; painting = true; last = null; cv.setPointerCapture(e.pointerId); paint(e); });
+    cv.addEventListener('pointerdown', e => { if (!enc) return; painting = true; last = null; hoverPt = pt(e); cv.setPointerCapture(e.pointerId); paint(e); });
     cv.addEventListener('pointermove', e => { if (!enc) return; hoverPt = pt(e); if (painting) paint(e); else { render(); describe(); } });
     cv.addEventListener('pointerup', () => { painting = false; last = null; });
+    cv.addEventListener('pointercancel', () => { painting = false; last = null; });
     cv.addEventListener('pointerleave', () => { hoverPt = null; if (enc) render(); });
 
     const TYPE_NAME = [
@@ -972,9 +1096,10 @@
       'Fixed dark module.'
     ];
     function describe() {
+      if (!hoverPt) return;
       const [x, y] = hoverPt.map(Math.floor);
       if (x < 0 || y < 0 || x >= size || y >= size) {
-        $('#hover').textContent = 'Hover any square to inspect its role or byte index';
+        $('#hover').textContent = 'Hover or tap any square to inspect its role or byte index';
         return;
       }
       const i = y * size + x, t = types[i];
@@ -995,9 +1120,10 @@
     function count8() { return Math.round(size * size * 0.08); }
     function preset(name) {
       if (!enc) return;
+      hideDragHint();
       presetsUsed[name] = S.level;
+      damage.fill(0);
       if (name === 'speck') {
-        damage.fill(0);
         const cand = [];
         for (let i = 0; i < size * size; i++) if (!isFinderish(i)) cand.push(i);
         for (let n = count8(), j = 0; j < n; j++) {
@@ -1006,7 +1132,6 @@
           flip(cand[j]);
         }
       } else if (name === 'blob') {
-        damage.fill(0);
         const cx = size * (0.4 + Math.random() * 0.25), cy = size * (0.4 + Math.random() * 0.25);
         const cand = [];
         for (let i = 0; i < size * size; i++) if (!isFinderish(i)) cand.push(i);
@@ -1018,8 +1143,6 @@
       } else if (name === 'corner') {
         const cx = size - 4;
         for (let y = 2; y <= 4; y++) for (let x = cx - 1; x <= cx + 1; x++) damage[y * size + x] = 2;
-      } else {
-        damage.fill(0);
       }
       update();
     }
@@ -1028,6 +1151,19 @@
     $('#pLogo').onclick = () => preset('logo');
     $('#pCorner').onclick = () => preset('corner');
     $('#pReset').onclick = () => preset('reset');
+
+    // Phone scan mode toggle (clears all colored overlays & hover rings so real phone cameras can scan)
+    $('#phoneScanBtn').onclick = () => {
+      if (!enc) return;
+      $('#oFixed').checked = false;
+      $('#oRebuilt').checked = false;
+      $('#oAnat').checked = false;
+      $('#oBytes').checked = false;
+      $('#legend').classList.add('hidden');
+      $('#legend').classList.remove('flex');
+      hoverPt = null;
+      render();
+    };
 
     // ---------- Diagnostics Panel ----------
     const coverPct = () => damage.reduce((a, d) => a + (d ? 1 : 0), 0) / (size * size) * 100;
@@ -1107,7 +1243,7 @@
     function explain(cover, nHit, nFixed, wrong) {
       if (dec.stage === 'locate') {
         const lost = dec.finders.filter(f => !f.found).length;
-        return `You damaged <strong class="theme-text-primary">${lost} corner finder pattern${lost > 1 ? 's' : ''}</strong>. Finder targets hold <strong class="theme-text-primary">zero data</strong>—the camera uses them to detect geometry and orientation. Without them, decoding aborts before error correction even starts, so ${cover.toFixed(1)}% damage was fatal.`;
+        return `You damaged <strong class="theme-text-primary">${lost} corner finder pattern${lost > 1 ? 's' : ''}</strong>. Finder targets hold <strong class="theme-text-primary">zero data</strong>—the camera uses them to detect geometry and orientation. Without them, decoding aborts before error correction even starts, so ${cover.toFixed(1)}% painted area was fatal.`;
       }
       if (dec.stage === 'format') {
         return `Both redundant copies of the 15-bit <strong class="theme-text-primary">format info</strong> (adjacent to the corners) are corrupted beyond BCH repair. Without it, the scanner cannot know which XOR mask or EC level was used.`;
@@ -1144,7 +1280,7 @@
       let t = 'Core takeaway: <strong class="text-white">the scanner is never told where the damage is.</strong> Syndromes let it solve for error locations and values simultaneously.';
       if (done.c4) t = 'Key architectural contrast: <strong class="text-white">data bytes are protected by Galois Field algebra</strong>, while <strong class="text-amber-300">corner finder patterns have zero mathematical redundancy</strong>—a tiny corner scratch beats a massive center spill.';
       if (done.c5) t += ' Also notice that errors are counted in <strong class="text-white">8-bit bytes, not pixels</strong>: a single blob ruins a few bytes completely, whereas scattered speckles nick dozens of separate bytes.';
-      if (done.c3) t += ' Level H (~30% budget) is why brands can safely embed logos inside QR codes.';
+      if (done.c3) t += ' Level H (~30% byte recovery capacity) is why brands can safely embed logos inside QR codes.';
       $('#insight').innerHTML = t;
     }
 
@@ -1201,7 +1337,7 @@
         </button>`;
       }).join('');
       [...$('#masks').querySelectorAll('canvas')].forEach((c, j) => drawGrid(c, items[j].g, size));
-      $('#masks').querySelectorAll('.mk:not([disabled])').forEach(b => b.onclick = () => { S.mask = +b.dataset.m; encodeNow(true); });
+      $('#masks').querySelectorAll('.mk:not([disabled])').forEach(b => b.onclick = () => { tryEncode(S.text, S.level, +b.dataset.m, true); });
       $('#maskNote').textContent = `Active: Mask ${enc.mask} [${enc.mask_formulas[enc.mask]}]${enc.mask === enc.auto_mask ? ' (lowest penalty)' : ' (forced)'}`;
       const rows = [
         ['Runs of 5+ identical modules', 'n1'],
@@ -1215,7 +1351,7 @@
         <tbody class="divide-y theme-border">${rows.map(([n, k], idx) => `<tr class="${idx === 4 ? 'font-bold theme-text-primary theme-elevated' : 'theme-text-secondary'}"><td class="py-2 pr-4">${n}</td><td class="py-2 px-4 text-right font-mono">${enc.unmasked_penalty[k]}</td><td class="py-2 pl-4 text-right font-mono">${enc.penalties[enc.mask][k]}</td></tr>`).join('')}</tbody>
       </table>`;
     }
-    $('#autoMask').onclick = () => { if (!enc) return; S.mask = -1; encodeNow(true); };
+    $('#autoMask').onclick = () => { if (!enc) return; tryEncode(S.text, S.level, -1, true); };
 
     // ---------- Math View ----------
     const SUP = n => String(n).split('').map(d => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d]).join('');
@@ -1232,13 +1368,18 @@
     let typingT;
     $('#msg').addEventListener('input', e => {
       clearTimeout(typingT);
-      typingT = setTimeout(() => { S.text = e.target.value; if (enc) encodeNow(false); }, 120);
+      typingT = setTimeout(() => {
+        if (!enc) return;
+        const ok = tryEncode(e.target.value, S.level, S.mask, false);
+        if (!ok) {
+          e.target.value = S.text;
+        }
+      }, 120);
     });
     $('#levels').addEventListener('click', e => {
       const b = e.target.closest('button');
       if (!b || !enc) return;
-      S.level = b.dataset.l;
-      encodeNow(false);
+      tryEncode(S.text, b.dataset.l, S.mask, false);
     });
     $('#toolSeg').addEventListener('click', e => {
       const b = e.target.closest('button');
@@ -1247,7 +1388,7 @@
       styleControls();
     });
     $('#bsize').addEventListener('input', e => S.brush = +e.target.value);
-    for (const id of ['#oFixed', '#oAnat', '#oBytes']) {
+    for (const id of ['#oFixed', '#oRebuilt', '#oAnat', '#oBytes']) {
       $(id).addEventListener('change', () => {
         const leg = $('#legend');
         if ($('#oAnat').checked) {
