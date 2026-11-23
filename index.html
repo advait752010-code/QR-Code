@@ -256,7 +256,7 @@
     }
   </style>
 </head>
-<body class="selection:bg-indigo-500/20 pb-16 md:pb-10">
+<body class="selection:bg-indigo-500/20 pb-16 md:pb-12">
 
   <!-- Top Navigation / Hero Band -->
   <header class="theme-surface border-b" style="box-shadow: none;">
@@ -268,24 +268,16 @@
           <span>Interactive Mechanism Explorer · Error-Correcting Codes</span>
         </div>
 
-        <div class="flex items-center gap-2.5">
-          <a href="qr_engine.py" target="_blank" rel="noopener"
-             class="theme-elevated theme-text-secondary hover:opacity-90 inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border">
-            <i data-lucide="code-2" class="w-3.5 h-3.5"></i>
-            <span>Inspect qr_engine.py</span>
-          </a>
-
-          <!-- Icon-only Theme Toggle Button (No text labels) -->
-          <button id="themeToggle" type="button" aria-label="Toggle color theme">
-            <svg id="iconMoon" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
-            </svg>
-            <svg id="iconSun" class="hidden" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="4"/>
-              <path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>
-            </svg>
-          </button>
-        </div>
+        <!-- Icon-only Theme Toggle Button (No text labels) -->
+        <button id="themeToggle" type="button" aria-label="Toggle color theme">
+          <svg id="iconMoon" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+          </svg>
+          <svg id="iconSun" class="hidden" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>
+          </svg>
+        </button>
       </div>
 
       <h1 class="theme-text-primary text-3xl sm:text-4xl font-bold tracking-tight">
@@ -327,7 +319,7 @@
             <label for="msg" class="text-xs font-semibold uppercase tracking-wider theme-text-muted">Payload Message</label>
             <span class="text-xs theme-text-muted font-mono">UTF-8 Byte Mode</span>
           </div>
-          <input type="text" id="msg" maxlength="98" value="https://www.starbucks.com/menu?table=12" autocomplete="off" spellcheck="false"
+          <input type="text" id="msg" maxlength="98" value="https://example.com/menu?table=12" autocomplete="off" spellcheck="false"
             class="theme-input w-full rounded-lg px-3.5 py-2.5 text-sm font-medium">
           <div id="encErr" class="text-xs text-rose-500 font-medium mt-1.5"></div>
         </div>
@@ -697,13 +689,6 @@
         </div>
       </details>
     </section>
-
-    <!-- Footer -->
-    <footer class="mt-12 pt-6 border-t theme-border text-xs theme-text-muted leading-relaxed flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-      <p class="max-w-3xl">
-        All encoding, masking, syndrome calculation, and Reed–Solomon error correction run live from scratch in <a href="qr_engine.py" target="_blank" rel="noopener" class="theme-text-secondary font-medium underline">qr_engine.py</a> via Pyodide. <strong>jsQR</strong> is used strictly as an independent third-party cross-check.
-      </p>
-    </footer>
   </main>
 
   <!-- Mobile Sticky Verdict Pill -->
@@ -819,7 +804,6 @@
           dot.className = 'w-2 h-2 rounded-full bg-emerald-500';
         }
 
-        // Encode initial code and auto-apply a small demo coffee spill so judges see the "Aha!" immediately
         if (tryEncode(S.text, S.level, S.mask, false)) {
           applyInitialDemoSpill();
         }
@@ -869,7 +853,6 @@
     }
 
     function applyInitialDemoSpill() {
-      // Paint a small realistic coffee ring/blotch in the center-bottom data region that repairs cleanly
       const cx = size * 0.56, cy = size * 0.62, rad = 2.1;
       for (let y = Math.floor(cy - rad); y <= cy + rad; y++) {
         for (let x = Math.floor(cx - rad); x <= cx + rad; x++) {
@@ -971,7 +954,6 @@
           } else {
             ctx.fillStyle = d === 1 ? C.coffee : d === 2 ? C.white : (orig[i] ? C.dark : C.light);
             if (d || orig[i]) ctx.fillRect((x + QZ) * k, (y + QZ) * k, k + 0.5, k + 0.5);
-            // Draw visible coffee stain tint even when spilled over already-dark modules
             if (d === 1 && orig[i] === 1) {
               ctx.fillStyle = 'rgba(180, 83, 9, 0.42)';
               ctx.fillRect((x + QZ) * k, (y + QZ) * k, k + 0.5, k + 0.5);
