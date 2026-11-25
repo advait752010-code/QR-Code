@@ -799,7 +799,7 @@
           <div class="tech-divider">
             <div class="sec-label"><span>Technical Details (Finite Field &amp; Polynomial Math)</span></div>
             <p>
-              Before printing, each group's message bytes are treated as coefficients of a polynomial over the finite field <strong>GF(256)</strong> (modulo primitive polynomial <code style="background:var(--elev);padding:1px 5px;border-radius:4px">0x11D</code>). Dividing by a generator polynomial produces the amber backup bytes (the remainder). Because each unknown error has two unknowns (its <em>byte position</em> and its <em>XOR bit-flip value</em>), <em>n</em> backup bytes yield <em>n</em> syndrome equations and can repair up to ⌊n/2⌋ damaged bytes using <strong>Berlekamp–Massey</strong>, <strong>Chien search</strong>, and <strong>Forney's algorithm</strong> implemented without libraries in <a href="qr_engine.py" class="src" target="_blank" rel="noopener">qr_engine.py</a>.
+              Before printing, each group's message bytes are treated as coefficients of a polynomial over the finite field <strong>GF(256)</strong> (modulo primitive polynomial <code style="background:var(--elev);padding:1px 5px;border-radius:4px">0x11D</code>). Dividing by a generator polynomial produces the amber backup bytes (the remainder). Because each unknown error has two unknowns (its <em>byte position</em> and its <em>XOR bit-flip value</em>), <em>n</em> backup bytes yield <em>n</em> syndrome equations and can repair up to ⌊n/2⌋ damaged bytes using <strong>Berlekamp–Massey</strong>, <strong>Chien search</strong>, and <strong>Forney's algorithm</strong>.
             </p>
           </div>
 
