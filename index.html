@@ -1009,7 +1009,7 @@
 
       const ecN = r.blocks.reduce((a, b) => a + b.ec.length, 0);
       const fixN = r.blocks.reduce((a, b) => a + (b.ec.length >> 1), 0);
-      $('#heroStat').innerHTML = `Right now this code holds <strong>${r.payload_bytes} bytes of message</strong> and <strong>${ecN} bytes of repair data</strong>, enough to rebuild about <strong>${fixN} damaged bytes</strong> (${(fixN / r.origin.length * 100).toFixed(0)}% of the code).`;
+      $('#heroStat').innerHTML = `Right now this code holds <strong>${r.payload_bytes} bytes of message</strong> and <strong>${ecN} bytes of repair data</strong>, enough to rebuild <strong>up to ${fixN} damaged bytes</strong> (${(fixN / r.origin.length * 100).toFixed(0)}% of the code).`;
 
       styleControls();
       drawMasks();
