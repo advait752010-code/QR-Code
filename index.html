@@ -98,21 +98,9 @@
     .hero-top {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-end;
       gap: 12px;
       margin-bottom: 10px;
-    }
-    .pill-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 11px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 600;
-      background: var(--ac-soft);
-      border: 1px solid var(--ac-bd);
-      color: var(--ac);
     }
     #themeToggle {
       width: 34px;
@@ -630,12 +618,6 @@
     .mk-btn.sel { border-color: var(--ac); background: var(--ac-soft); }
     .mk-btn canvas { width: 100%; aspect-ratio: 1; background: #fff; border-radius: 4px; margin-bottom: 5px; image-rendering: pixelated; }
 
-    footer.foot {
-      margin-top: 24px;
-      font-size: 12.5px;
-      color: var(--mu);
-    }
-
     .hero-stat {
       background: var(--ac-soft);
       border: 1px solid var(--ac-bd);
@@ -691,8 +673,7 @@
   <header class="hero">
     <div class="wrap">
       <div class="hero-top">
-        <span class="pill-tag">Interactive Visual Guide · Error-Correcting Codes</span>
-        <button id="themeToggle" type="button" aria-label="Toggle dark or light theme">🌙</button>
+        <button id="themeToggle" type="button" aria-label="Toggle dark or light theme"></button>
       </div>
       <h1>Spill coffee on a QR code. Why does it still scan?</h1>
       <p class="lead">
@@ -912,10 +893,6 @@
         </div>
       </details>
     </section>
-
-    <footer class="foot">
-      All encoding, masking, syndrome evaluation, and Reed–Solomon error correction run live, with no external libraries, in <a href="qr_engine.py" class="src" target="_blank" rel="noopener">qr_engine.py</a> via Pyodide (Python in WebAssembly). <a href="https://github.com/cozmo/jsQR" target="_blank" rel="noopener">jsQR</a> is used strictly as an independent third-party cross-check.
-    </footer>
   </main>
 
   <div id="mini" aria-hidden="true">Starting Python decoder…</div>
@@ -945,11 +922,13 @@
     const BLOCK_COLS = ['#4f46e5', '#0891b2', '#d97706', '#7c3aed', '#db2777', '#059669'];
     const isFinderish = i => [1, 2, 5, 7].includes(types[i]);
 
-    // Theme Toggle
+    // Theme Toggle (Lucide sun / moon SVGs)
     const themeBtn = $('#themeToggle');
+    const SUN_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
+    const MOON_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>';
     function syncThemeBtn() {
       const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-      themeBtn.textContent = dark ? '☀️' : '🌙';
+      themeBtn.innerHTML = dark ? SUN_ICON : MOON_ICON;
     }
     syncThemeBtn();
     themeBtn.addEventListener('click', () => {
