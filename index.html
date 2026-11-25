@@ -458,10 +458,13 @@
       color: var(--mu);
       font-size: 11px;
       text-align: center;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      line-height: 1.25;
+      min-height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
+    @media (max-width: 600px) { .pipe-step { font-size: 10px; padding: 5px 2px; } }
     .pipe-step.ok { background: var(--ok-bg); border-color: var(--ok-bd); color: var(--ok-tx); font-weight: 700; }
     .pipe-step.bad { background: var(--bad-bg); border-color: var(--bad-bd); color: var(--bad-tx); font-weight: 700; }
 
@@ -633,6 +636,33 @@
       color: var(--mu);
     }
 
+    .hero-stat {
+      background: var(--ac-soft);
+      border: 1px solid var(--ac-bd);
+      border-radius: 10px;
+      padding: 9px 13px;
+      font-size: 14px;
+      color: var(--tx);
+      margin: 0 0 14px;
+    }
+    .hero-stat:empty { display: none; }
+    .cmp {
+      display: none;
+      margin-top: 10px;
+      background: var(--elev);
+      border: 1px solid var(--bd);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 12.5px;
+      color: var(--mu);
+      line-height: 1.6;
+    }
+    .cmp strong { color: var(--tx); }
+    .cmp-ok { color: var(--ok-tx); font-weight: 700; }
+    .cmp-bad { color: var(--bad-tx); font-weight: 700; }
+    .acc-body ul { margin: 0 0 10px; padding-left: 18px; }
+    .acc-body li { margin-bottom: 6px; }
+
     /* Mobile Sticky Pill */
     #mini {
       position: fixed;
@@ -668,6 +698,7 @@
       <p class="lead">
         A large share of a QR code isn't your message—it is <strong>extra repair data calculated from your message</strong>. A scanner can rebuild up to 7–30% of the code's bytes, depending on the setting, and it is never told where the damage is.
       </p>
+      <p class="lead hero-stat" id="heroStat"></p>
       <ol class="steps">
         <li>Drag across the code to spill coffee</li>
         <li>Watch the decoder rebuild what you destroyed</li>
@@ -683,7 +714,7 @@
       <section class="card" aria-label="QR code canvas">
         <div class="canvas-box">
           <canvas id="qr" width="660" height="660" aria-label="QR code. Drag to spill coffee on it."></canvas>
-          <div id="dragHint">Drag anywhere on the code to spill coffee</div>
+          <div id="dragHint">Loading decoder…</div>
         </div>
 
         <div id="hover">Hover or tap any square to inspect its job or byte group</div>
@@ -709,6 +740,7 @@
               <button id="pCorner">Nick a corner</button>
               <button id="pReset">Reset</button>
             </div>
+            <div id="cmp" class="cmp" aria-live="polite"></div>
           </div>
 
           <div class="chk-row">
@@ -737,8 +769,8 @@
                 <label for="msg">Link or Message</label>
                 <span>Edit live</span>
               </div>
-              <input type="text" id="msg" maxlength="98" value="https://starbucks.com/menu?table=12" autocomplete="off" spellcheck="false">
-              <div id="encErr" style="color:#e11d48;font-size:12px;font-weight:600;margin-top:5px"></div>
+              <input type="text" id="msg" maxlength="98" value="https://example.com/menu?table=12" autocomplete="off" spellcheck="false">
+              <div id="encErr" role="status" style="color:#e11d48;font-size:12px;font-weight:600;margin-top:5px"></div>
             </div>
 
             <div>
@@ -747,10 +779,10 @@
                 <span>More backup = larger grid</span>
               </div>
               <div class="lv-grid" id="levels" role="group" aria-label="Error correction level">
-                <button class="lv-btn" data-l="L">Low (L)<small>repairs up to ~7% of bytes</small></button>
-                <button class="lv-btn" data-l="M">Medium (M)<small>repairs up to ~15% of bytes</small></button>
-                <button class="lv-btn" data-l="Q">High (Q)<small>repairs up to ~25% of bytes</small></button>
-                <button class="lv-btn" data-l="H">Max (H)<small>repairs up to ~30% of bytes</small></button>
+                <button class="lv-btn" data-l="L">Low (L)<small>repairs ≈7% of bytes</small></button>
+                <button class="lv-btn" data-l="M">Medium (M)<small>repairs ≈15% of bytes</small></button>
+                <button class="lv-btn" data-l="Q">High (Q)<small>repairs ≈25% of bytes</small></button>
+                <button class="lv-btn" data-l="H">Max (H)<small>repairs ≈30% of bytes</small></button>
               </div>
             </div>
           </div>
@@ -783,7 +815,7 @@
         <div class="stats-grid">
           <div class="stat-card"><b id="sCover" class="mono">0.0%</b><span>Area painted</span></div>
           <div class="stat-card"><b id="sBytes" class="mono">0</b><span>Bytes damaged</span></div>
-          <div class="stat-card"><b id="sBest" class="mono">0.0%</b><span>Most damage survived (<span id="sBestLvl">M</span>)</span></div>
+          <div class="stat-card"><b id="sBest" class="mono">0.0%</b><span>Most bytes damaged &amp; still scanned (<span id="sBestLvl">M</span>)</span></div>
         </div>
 
         <div style="padding-top:14px;border-top:1px solid var(--bd)">
@@ -805,9 +837,9 @@
       <ul class="exp-grid" id="ch">
         <li class="exp-card" id="c1"><b>1. Spill safely</b>Paint over the center and keep scanning while repaired bytes highlight green.</li>
         <li class="exp-card" id="c2"><b>2. Break the budget</b>Keep spilling until a group exceeds its repair limit and the scan fails.</li>
-        <li class="exp-card" id="c3"><b>3. Upgrade to Max (H)</b>Switch to Max (H) protection and survive ≥15% total painted area.</li>
+        <li class="exp-card" id="c3"><b>3. Upgrade to Max (H)</b>Switch to Max (H) protection and still scan with at least 15% of the code’s bytes damaged.</li>
         <li class="exp-card" id="c4"><b>4. Tiny fatal scratch</b>Break the scan while painting less than 3% of the total area. Hint: not every square is protected.</li>
-        <li class="exp-card" id="c5"><b>5. Speckles vs. blob</b>Compare both 8% buttons at the same protection level. Why do they differ?</li>
+        <li class="exp-card" id="c5"><b>5. Speckles vs. blob</b>Click both 8% buttons at the same protection level. A comparison appears under the buttons: why do they differ?</li>
       </ul>
       <div id="insight"></div>
     </section>
@@ -825,7 +857,7 @@
           <div class="tech-divider">
             <div class="sec-label"><span>Technical Details (Finite Field &amp; Polynomial Math)</span></div>
             <p>
-              Before printing, each group's message bytes are treated as coefficients of a polynomial over the finite field <strong>GF(256)</strong> (modulo primitive polynomial <code style="background:var(--elev);padding:1px 5px;border-radius:4px">0x11D</code>). Dividing by a generator polynomial produces the amber backup bytes (the remainder). Because each unknown error has two unknowns (its <em>byte position</em> and its <em>XOR bit-flip value</em>), <em>n</em> backup bytes yield <em>n</em> syndrome equations and can repair up to ⌊n/2⌋ damaged bytes—using <strong>Berlekamp–Massey</strong>, <strong>Chien search</strong>, and <strong>Forney's algorithm</strong> written from scratch in <a href="qr_engine.py" class="src" target="_blank" rel="noopener">qr_engine.py</a>.
+              Before printing, each group's message bytes are treated as coefficients of a polynomial over the finite field <strong>GF(256)</strong> (modulo primitive polynomial <code style="background:var(--elev);padding:1px 5px;border-radius:4px">0x11D</code>). Dividing by a generator polynomial produces the amber backup bytes (the remainder). Because each unknown error has two unknowns (its <em>byte position</em> and its <em>XOR bit-flip value</em>), <em>n</em> backup bytes yield <em>n</em> syndrome equations and can repair up to ⌊n/2⌋ damaged bytes—using <strong>Berlekamp–Massey</strong>, <strong>Chien search</strong>, and <strong>Forney's algorithm</strong> implemented without libraries in <a href="qr_engine.py" class="src" target="_blank" rel="noopener">qr_engine.py</a>.
             </p>
           </div>
 
@@ -846,7 +878,7 @@
             <strong>Corner targets carry zero backup data:</strong> The three 7×7 bullseye squares in the corners tell your phone camera where the QR code is, its scale, and its orientation via their <code style="background:var(--elev);padding:1px 5px;border-radius:4px">1:1:3:1:1</code> stripe ratio. Because they hold no message bytes, error correction cannot rebuild them if scratched out.
           </p>
           <p>
-            <strong>Why scattered speckles hurt more than one solid blob:</strong> Error correction counts damage in <em>whole 8-bit bytes</em> (clusters of 8 adjacent squares), not individual pixels. One solid blob destroys a few bytes completely, whereas the same area scattered as speckles nicks dozens of separate bytes at once—exhausting the repair budget much faster.
+            <strong>Why scattered speckles hurt more than one solid blob:</strong> Error correction counts damage in <em>whole 8-bit bytes</em> (usually a 2×4 cluster of squares), not individual pixels. One solid blob destroys a few bytes completely, whereas the same area scattered as speckles nicks dozens of separate bytes at once—exhausting the repair budget much faster.
           </p>
         </div>
       </details>
@@ -865,17 +897,29 @@
           <div class="mask-grid" id="masks"></div>
         </div>
       </details>
+
+      <!-- Accordion 4: Honest limits -->
+      <details class="acc">
+        <summary>What this simulator simplifies</summary>
+        <div class="acc-body">
+          <ul>
+            <li><strong>The grid is read perfectly.</strong> There is no camera blur, glare or perspective. Timing rulers, tilt anchors and size markers are not needed by this decoder, so damaging them changes nothing here. Real scanners use them to find the grid.</li>
+            <li><strong>“Corner target lost” is our own rule.</strong> We call a corner target lost when 8 or more of its 49 squares are wrong. Real scanners are more or less tolerant, which is why the independent jsQR check can sometimes disagree.</li>
+            <li><strong>Repair capacity.</strong> This decoder repairs up to ⌊n/2⌋ bytes per group. The QR standard holds back part of the backup bytes in the smallest versions to avoid false repairs, so a real phone may repair slightly fewer bytes there. The 7 / 15 / 25 / 30% figures are the standard’s nominal values.</li>
+            <li><strong>False repairs are real.</strong> If damage goes far past the budget, the decoder can land on a different valid-looking word. This page detects that because it knows the original bytes. A phone does not.</li>
+            <li><strong>Sources.</strong> The algorithms are standard (ISO/IEC 18004; Reed–Solomon with Berlekamp–Massey, Chien search and Forney). The implementation uses no external libraries, and the repository README lists references and any AI-tool assistance.</li>
+          </ul>
+        </div>
+      </details>
     </section>
 
     <footer class="foot">
-      All encoding, masking, syndrome evaluation, and Reed–Solomon error correction run live from scratch in <a href="qr_engine.py" class="src" target="_blank" rel="noopener">qr_engine.py</a> via Pyodide (Python in WebAssembly). <a href="https://github.com/cozmo/jsQR" target="_blank" rel="noopener">jsQR</a> is used strictly as an independent third-party cross-check.
+      All encoding, masking, syndrome evaluation, and Reed–Solomon error correction run live, with no external libraries, in <a href="qr_engine.py" class="src" target="_blank" rel="noopener">qr_engine.py</a> via Pyodide (Python in WebAssembly). <a href="https://github.com/cozmo/jsQR" target="_blank" rel="noopener">jsQR</a> is used strictly as an independent third-party cross-check.
     </footer>
   </main>
 
   <div id="mini" aria-hidden="true">Starting Python decoder…</div>
 
-  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script>
   {
     const $ = s => document.querySelector(s);
@@ -883,6 +927,7 @@
     const S = { text: $('#msg').value, level: 'M', mask: -1, tool: 'coffee', brush: 2 };
     let apiEncode, apiDecode, enc, size, orig, types, cwmap, cwMods, damage, eff, dec;
     let cwHit = [], blockHits = [], hoverPt = null, painting = false, last = null, pending = false, jt;
+    let presetResults = {};
     const best = { L: 0, M: 0, Q: 0, H: 0 };
     const done = {}, presetsUsed = {};
     const hex = v => v.toString(16).padStart(2, '0').toUpperCase();
@@ -920,18 +965,73 @@
       document.querySelectorAll('#toolSeg button').forEach(b => b.classList.toggle('on', b.dataset.t === S.tool));
     }
 
+    function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const el = document.createElement('script');
+        el.src = src;
+        el.onload = resolve;
+        el.onerror = () => reject(new Error('Could not load ' + src));
+        document.head.appendChild(el);
+      });
+    }
+
+    function engineFailure(err) {
+      $('#verdictBox').className = 'bad';
+      $('#verdictTitle').textContent = 'Decoder error';
+      $('#why').textContent = 'Something went wrong inside the Python decoder (' + String((err && err.message) || err).slice(0, 160) + '). Press Reset, or reload the page.';
+    }
+
+    function drawPlaceholder() {
+      const n = 29, k = cv.width / (n + 2 * QZ);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, cv.width, cv.height);
+      ctx.fillStyle = '#e2e7f1';
+      let seed = 7;
+      for (let y = 0; y < n; y++) {
+        for (let x = 0; x < n; x++) {
+          seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+          const inFinder = (x < 8 && y < 8) || (x > n - 9 && y < 8) || (x < 8 && y > n - 9);
+          if (!inFinder && (seed >> 16) % 2) ctx.fillRect((x + QZ) * k, (y + QZ) * k, k + 0.5, k + 0.5);
+        }
+      }
+      for (const [fx, fy] of [[0, 0], [n - 7, 0], [0, n - 7]]) {
+        ctx.fillStyle = '#cbd3e6'; ctx.fillRect((fx + QZ) * k, (fy + QZ) * k, 7 * k, 7 * k);
+        ctx.fillStyle = '#ffffff'; ctx.fillRect((fx + 1 + QZ) * k, (fy + 1 + QZ) * k, 5 * k, 5 * k);
+        ctx.fillStyle = '#cbd3e6'; ctx.fillRect((fx + 2 + QZ) * k, (fy + 2 + QZ) * k, 3 * k, 3 * k);
+      }
+    }
+
     async function boot() {
+      const label = t => { $('#engineLabel').textContent = t; };
+      const CDN = 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/';
       try {
-        const py = await loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/' });
-        let srcUrl = 'qr_engine.py', res = await fetch(srcUrl).catch(() => null);
-        if (!res || !res.ok) { srcUrl = 'qr_engine.txt'; res = await fetch(srcUrl); }
-        document.querySelectorAll('a.src').forEach(a => a.href = srcUrl);
+        label('Loading Python (about 10 MB, first visit only)…');
+        $('#why').textContent = 'The page is downloading its own Python engine. When it is ready, a coffee spill appears on the code and the decoder repairs it.';
+        let py;
+        try {
+          await loadScript('pyodide/pyodide.js');
+          py = await loadPyodide({ indexURL: 'pyodide/' });
+        } catch (localErr) {
+          if (typeof loadPyodide !== 'function') await loadScript(CDN + 'pyodide.js');
+          py = await loadPyodide({ indexURL: CDN });
+        }
+        label('Starting decoder…');
+        const res = await fetch('qr_engine.py');
+        if (!res || !res.ok) throw new Error('qr_engine.py could not be loaded');
+        document.querySelectorAll('a.src').forEach(a => a.href = 'qr_engine.py');
         py.runPython(await res.text());
         apiEncode = py.globals.get('api_encode');
         apiDecode = py.globals.get('api_decode');
 
         $('#engineDot').classList.add('ready');
         $('#engineLabel').textContent = 'qr_engine.py ready';
+        $('#dragHint').textContent = 'Drag anywhere on the code to spill coffee';
+
+        // Independent cross-check library: optional, never blocks the page.
+        loadScript('jsQR.js')
+          .catch(() => loadScript('https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js'))
+          .then(() => { if (enc) runJsqr(); })
+          .catch(() => { if (enc) runJsqr(); });
 
         if (tryEncode(S.text, S.level, S.mask, false)) {
           applyDemoSpill();
@@ -939,7 +1039,10 @@
       } catch (e) {
         $('#verdictBox').className = 'bad';
         $('#verdictTitle').textContent = 'Decoder failed to load';
-        $('#why').textContent = 'Python failed to initialize: ' + e.message + '. Please reload the page.';
+        $('#why').textContent = 'The Python engine could not start: ' + e.message + '. Check your connection and reload the page.';
+        $('#dragHint').textContent = 'Decoder not loaded';
+        $('#mini').className = 'bad';
+        $('#mini').textContent = 'Decoder failed to load';
       }
     }
 
@@ -964,7 +1067,11 @@
       cwmap = r.cwmap;
       cwMods = Array.from({ length: r.origin.length }, () => []);
       cwmap.forEach((c, i) => { if (c >= 0) cwMods[c].push(i); });
-      if (!same) damage = new Uint8Array(size * size);
+      if (!same) { damage = new Uint8Array(size * size); presetResults = {}; renderCmp(); }
+
+      const ecN = r.blocks.reduce((a, b) => a + b.ec.length, 0);
+      const fixN = r.blocks.reduce((a, b) => a + (b.ec.length >> 1), 0);
+      $('#heroStat').innerHTML = `Right now this code holds <strong>${r.payload_bytes} bytes of message</strong> and <strong>${ecN} bytes of repair data</strong>, enough to rebuild about <strong>${fixN} damaged bytes</strong> (${(fixN / r.origin.length * 100).toFixed(0)}% of the code).`;
 
       styleControls();
       $('#sBestLvl').textContent = S.level;
@@ -989,7 +1096,12 @@
     function update() {
       eff = new Uint8Array(size * size);
       for (let i = 0; i < eff.length; i++) eff[i] = damage[i] === 1 ? 1 : damage[i] === 2 ? 0 : orig[i];
-      dec = JSON.parse(apiDecode(Array.from(eff).join(''), size));
+      try {
+        dec = JSON.parse(apiDecode(Array.from(eff).join(''), size));
+      } catch (err) {
+        engineFailure(err);
+        return;
+      }
       cwHit = cwMods.map(l => l.some(i => eff[i] !== orig[i]));
       blockHits = enc.blocks.map(() => 0);
       cwHit.forEach((h, c) => { if (h) blockHits[enc.origin[c][0]]++; });
@@ -1158,8 +1270,8 @@
       '',
       'Corner target — locates code & orientation (holds zero message data, so no repair backup).',
       'Blank separator border around corner target.',
-      'Timing ruler — calibrates grid rows and columns.',
-      'Tilt anchor — corrects perspective skew.',
+      'Timing ruler — calibrates grid rows and columns (real scanners use it; this simplified decoder does not need it).',
+      'Tilt anchor — corrects perspective skew (real scanners use it; this simplified decoder does not need it).',
       'Settings strip — stores protection level & mask pattern.',
       'Size marker — encodes matrix dimensions.',
       'Fixed dark anchor square.'
@@ -1211,6 +1323,18 @@
         for (let y = 2; y <= 4; y++) for (let x = size - 5; x <= size - 3; x++) damage[y * size + x] = 2;
       }
       update();
+      if (name === 'speck' || name === 'blob') {
+        presetResults[name] = { hit: cwHit.filter(Boolean).length, total: enc.origin.length, ok: !!dec && dec.ok && dec.text === S.text, level: S.level };
+        renderCmp();
+        challenges();
+      }
+    }
+    function renderCmp() {
+      const el = $('#cmp'), a = presetResults.speck, b = presetResults.blob;
+      const fmt = (n, r) => r ? `<strong>${n}:</strong> ${r.hit} of ${r.total} bytes damaged · ${r.ok ? '<span class="cmp-ok">scans ✓</span>' : '<span class="cmp-bad">fails ✗</span>'}` : '';
+      const parts = [fmt('Speckles', a), fmt('One blob', b)].filter(Boolean);
+      el.innerHTML = parts.join('<br>') + (a && b ? '<br><em>Same 8% of the area, but the repair budget counts <u>bytes touched</u>, not area.</em>' : '');
+      el.style.display = parts.length ? 'block' : 'none';
     }
     $('#pSpeck').onclick = () => preset('speck');
     $('#pBlob').onclick = () => preset('blob');
@@ -1234,22 +1358,30 @@
       const nFix = dec.blocks ? dec.blocks.reduce((a, b) => a + b.positions.length, 0) : 0;
       const wrong = dec.ok && dec.text !== S.text;
       const pass = dec.ok && !wrong;
+      const bytePct = nHit / enc.origin.length * 100;
+      const falseRepair = !pass && !!dec.blocks && dec.blocks.some((k, b) => {
+        if (k.status === 'failed') return false;
+        const o = enc.blocks[b].data.concat(enc.blocks[b].ec);
+        return k.corrected.some((v, i) => v !== o[i]);
+      });
 
-      if (pass) best[S.level] = Math.max(best[S.level], cov);
+      if (pass) best[S.level] = Math.max(best[S.level], bytePct);
 
       let why;
       if (dec.stage === 'locate') {
         const lost = dec.finders.filter(f => !f.found).length;
-        why = `You damaged <strong>${lost} corner target${lost > 1 ? 's' : ''}</strong>. Corner targets carry <strong>zero backup data</strong>—your phone uses them just to locate the code. Only ${cov.toFixed(1)}% was painted, yet scanning stopped immediately.`;
+        why = `You damaged <strong>${lost} corner target${lost > 1 ? 's' : ''}</strong>. Corner targets carry <strong>zero backup data</strong>—your phone uses them just to locate the code. ${cov < 5 ? `Only ${cov.toFixed(1)}% of the area was painted, yet scanning stopped immediately.` : 'Without them the scanner cannot even find the code.'}`;
       } else if (dec.stage === 'format') {
         why = `Both copies of the <strong>settings strip</strong> beside the corners were damaged beyond repair, so the scanner cannot tell which pattern or protection level was used.`;
       } else if (dec.stage === 'fix') {
         const b = dec.blocks.findIndex(x => x.status === 'failed'), k = dec.blocks[b];
         why = `Group ${b + 1} lost <strong>${blockHits[b]} bytes</strong>, exceeding its repair budget of <strong>${k.can_fix}</strong>. Because each unknown error requires solving for two things (where it is and what its original value was), ${k.ec_len} backup bytes can repair at most ${k.can_fix} damaged bytes.`;
       } else if (dec.stage === 'parse') {
-        why = `The bytes repaired, but the recovered text header could not be read cleanly (${dec.error || 'invalid header'}).`;
+        why = falseRepair
+          ? `<strong>False repair.</strong> Damage went far past the budget, so the decoder “repaired” the bytes into a different valid-looking word and the result is garbage. This page can tell because it knows the original bytes. A real scanner has to guard against this.`
+          : `The bytes repaired, but the recovered text header could not be read cleanly (${dec.error || 'invalid header'}).`;
       } else if (wrong) {
-        why = `Extreme damage accidentally matched a different valid message—a rare edge case when damage goes far beyond capacity.`;
+        why = `<strong>False repair.</strong> Damage went far beyond the budget and the decoder landed on a different valid message. It is rare, but it is why real scanners add extra checks.`;
       } else if (!nHit) {
         why = `Zero bytes damaged. ${enc.ec_per_block * enc.blocks.length} of the ${enc.origin.length} bytes are <strong>extra backup bytes</strong> ready to absorb spills. Drag across the code to test it.`;
       } else if (!nFix) {
@@ -1268,7 +1400,7 @@
 
       $('#verdictBox').className = pass ? 'ok' : 'bad';
       $('#verdictTitle').textContent = title;
-      $('#decoded').textContent = dec.ok ? dec.text : '—';
+      $('#decoded').textContent = dec.ok ? (dec.text || '(empty message)') : '—';
       $('#why').innerHTML = why;
 
       $('#mini').className = pass ? 'ok' : 'bad';
@@ -1311,16 +1443,18 @@
     function tick(id) { if (!done[id]) { done[id] = 1; $('#' + id).classList.add('done'); } }
     function challenges() {
       const cov = coverPct(), nFix = dec.blocks ? dec.blocks.reduce((a, b) => a + b.positions.length, 0) : 0;
-      if (dec.ok && nFix >= 3 && cov >= 4) tick('c1');
+      const good = dec.ok && dec.text === S.text;
+      const bytePct = cwHit.filter(Boolean).length / enc.origin.length * 100;
+      if (good && nFix >= 3 && cov >= 4) tick('c1');
       if (dec.stage === 'fix' && !dec.ok) tick('c2');
-      if (dec.ok && S.level === 'H' && cov >= 15) tick('c3');
+      if (good && S.level === 'H' && bytePct >= 15) tick('c3');
       if (!dec.ok && cov < 3 && cov > 0) tick('c4');
-      if (presetsUsed.speck && presetsUsed.speck === presetsUsed.blob) tick('c5');
+      if (presetResults.speck && presetResults.blob && presetResults.speck.level === presetResults.blob.level) tick('c5');
 
       let t = 'Core insight: <strong>the scanner is never told where the damage is.</strong> It works out where and what changed from the repair data alone.';
       if (done.c4) t = 'Key contrast: <strong>data bytes are protected by backup math</strong>, whereas <strong>corner targets have zero backup</strong>—a tiny corner scratch beats a huge center spill.';
       if (done.c5) t += ' Also notice errors are counted in <strong>8-bit bytes, not individual squares</strong>: one solid blob ruins a few bytes completely, while scattered speckles nick dozens of separate bytes.';
-      if (done.c3) t += ' Max (H) protection (up to ~30% of bytes) is why brands can safely place a logo in the middle of a QR code.';
+      if (done.c3) t += ' Max (H) protection (nominally up to ~30% of bytes) is why brands can safely place a logo in the middle of a QR code.';
       $('#insight').innerHTML = t;
     }
 
@@ -1333,7 +1467,8 @@
       }
       let bi = dec.blocks.findIndex(k => k.status !== 'clean');
       if (bi < 0) bi = 0;
-      const k = dec.blocks[bi], t = k.trace, d = k.data_len;
+      const k = dec.blocks[bi], d = k.data_len;
+      const t = k.trace || (k.status === 'fixed' ? { positions: k.positions, values: k.positions.map(p => k.read[p] ^ k.corrected[p]) } : null);
       const origBlk = enc.blocks[bi].data.concat(enc.blocks[bi].ec);
       const nameOf = p => p < d ? `Message byte #${p + 1}` : `Backup byte #${p - d + 1}`;
       const chip = s => `<span class="byte-chip mono ${s ? '' : 'byte-d'}" style="${s ? 'background:#e11d48' : ''}">${hex(s)}</span>`;
@@ -1424,8 +1559,9 @@
     // Independent jsQR Cross-Check
     function runJsqr() {
       const el = $('#jsqr');
+      if (!enc || !eff) return;
       if (typeof jsQR !== 'function') {
-        el.textContent = 'Independent cross-check (jsQR) could not load.';
+        el.textContent = 'Independent cross-check (jsQR) is still loading or could not load. It is optional and does not affect the decoder above.';
         return;
       }
       const k = 6, n = size + 8, c = document.createElement('canvas');
@@ -1436,10 +1572,15 @@
       g.fillStyle = '#000';
       for (let i = 0; i < size * size; i++) if (eff[i]) g.fillRect((i % size + 4) * k, ((i / size | 0) + 4) * k, k, k);
       const r = jsQR(g.getImageData(0, 0, c.width, c.height).data, c.width, c.height, { inversionAttempts: 'dontInvert' });
-      el.innerHTML = `Independent cross-check via <strong>jsQR</strong> (third-party scanner reading the same canvas): ` +
-        (r ? `<strong style="color:var(--ok-tx)">scans cleanly</strong> (<code class="mono">${r.data.replace(/[<&]/g, ' ')}</code>).` : `<strong style="color:var(--bad-tx)">cannot decode</strong>.`);
+      const ours = !!dec && dec.ok && dec.text === S.text;
+      const note = (!!r !== ours)
+        ? ' <em>The two scanners disagree here: different scanners tolerate different amounts of damage. The decoder explained on this page is qr_engine.py.</em>'
+        : '';
+      el.innerHTML = `Independent cross-check via <strong>jsQR</strong> (a third-party scanner reading the same grid): ` +
+        (r ? `<strong style="color:var(--ok-tx)">scans cleanly</strong> (<code class="mono">${r.data.replace(/[<&]/g, ' ')}</code>).` : `<strong style="color:var(--bad-tx)">cannot decode</strong>.`) + note;
     }
 
+    drawPlaceholder();
     styleControls();
     boot();
   }
