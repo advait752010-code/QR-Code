@@ -130,43 +130,6 @@
     }
     .lead strong { color: var(--tx); }
 
-    .steps {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      padding: 0;
-      margin: 0;
-      list-style: none;
-      counter-reset: step;
-    }
-    .steps li {
-      counter-increment: step;
-      background: var(--elev);
-      border: 1px solid var(--bd);
-      border-radius: 9px;
-      padding: 5px 11px;
-      font-size: 12.5px;
-      font-weight: 500;
-      color: var(--mu);
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-    }
-    .steps li::before {
-      content: counter(step);
-      width: 18px;
-      height: 18px;
-      border-radius: 5px;
-      background: var(--ac);
-      color: #ffffff;
-      font-size: 11px;
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      flex: none;
-    }
-
     /* Main 2-Column Grid */
     .grid-main {
       display: grid;
@@ -252,7 +215,12 @@
     }
     .lv-btn.on small { color: var(--card); opacity: 0.85; }
 
-    /* Canvas Frame (Top of Left Card) */
+    /* Message Input Above Canvas */
+    .msg-top {
+      margin-bottom: 14px;
+    }
+
+    /* Canvas Frame */
     .canvas-box {
       position: relative;
       background: #ffffff;
@@ -459,7 +427,7 @@
     /* Telemetry Stats */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 10px;
       margin: 16px 0;
     }
@@ -625,7 +593,7 @@
       padding: 9px 13px;
       font-size: 14px;
       color: var(--tx);
-      margin: 0 0 14px;
+      margin: 0;
     }
     .hero-stat:empty { display: none; }
     .cmp {
@@ -680,19 +648,23 @@
         A large share of a QR code isn't your message—it is <strong>extra repair data calculated from your message</strong>. A scanner can rebuild up to 7–30% of the code's bytes, depending on the setting, and it is never told where the damage is.
       </p>
       <p class="lead hero-stat" id="heroStat"></p>
-      <ol class="steps">
-        <li>Drag across the code to spill coffee</li>
-        <li>Watch the decoder rebuild what you destroyed</li>
-        <li>Keep spilling until its repair budget runs out</li>
-      </ol>
     </div>
   </header>
 
   <main class="wrap">
     <div class="grid-main">
 
-      <!-- Left Column: QR Canvas First, Controls Below -->
+      <!-- Left Column: Message Input, QR Canvas, Controls Below -->
       <section class="card" aria-label="QR code canvas">
+        <div class="msg-top">
+          <div class="sec-label">
+            <label for="msg">Link or Message</label>
+            <span>Edit live</span>
+          </div>
+          <input type="text" id="msg" maxlength="98" value="https://example.com/menu?table=12" autocomplete="off" spellcheck="false">
+          <div id="encErr" role="status" style="color:#e11d48;font-size:12px;font-weight:600;margin-top:5px"></div>
+        </div>
+
         <div class="canvas-box">
           <canvas id="qr" width="660" height="660" aria-label="QR code. Drag to spill coffee on it."></canvas>
           <div id="dragHint">Loading decoder…</div>
@@ -703,9 +675,9 @@
         <div class="toolbar">
           <div class="row-between">
             <div class="seg" id="toolSeg" role="group" aria-label="Brush">
-              <button data-t="coffee">Coffee (dark)</button>
-              <button data-t="white">Scratch (white)</button>
-              <button data-t="repair">Wipe clean</button>
+              <button data-t="coffee">☕ Coffee (dark)</button>
+              <button data-t="white">🩹 Scratch (white)</button>
+              <button data-t="repair">🧽 Wipe clean</button>
             </div>
             <label style="font-size:12px;font-weight:600;color:var(--mu);display:inline-flex;align-items:center;gap:8px">
               Brush <input type="range" id="bsize" min="1" max="5" value="2" style="width:88px">
@@ -731,7 +703,6 @@
               <label><input type="checkbox" id="oAnat"> Color map</label>
               <label><input type="checkbox" id="oBytes"> Byte boxes</label>
             </div>
-            <button id="phoneScanBtn" type="button" style="font-size:12px;padding:5px 9px" title="Hide all colored overlays so your real phone camera can scan the damaged code">📱 Phone scan mode</button>
           </div>
 
           <div class="legend" id="legend">
@@ -743,16 +714,8 @@
             <span><i style="background:#d97706"></i>Backup repair bytes</span>
           </div>
 
-          <!-- Message & Protection Level Below Toolbar -->
+          <!-- Protection Level Below Toolbar -->
           <div class="encode-settings">
-            <div>
-              <div class="sec-label">
-                <label for="msg">Link or Message</label>
-              </div>
-              <input type="text" id="msg" maxlength="98" value="https://starbucks.com" autocomplete="off" spellcheck="false">
-              <div id="encErr" role="status" style="color:#e11d48;font-size:12px;font-weight:600;margin-top:5px"></div>
-            </div>
-
             <div>
               <div class="sec-label">
                 <span>Backup Protection Level</span>
@@ -795,7 +758,6 @@
         <div class="stats-grid">
           <div class="stat-card"><b id="sCover" class="mono">0.0%</b><span>Area painted</span></div>
           <div class="stat-card"><b id="sBytes" class="mono">0</b><span>Bytes damaged</span></div>
-          <div class="stat-card"><b id="sBest" class="mono">0.0%</b><span>Most bytes damaged &amp; still scanned (<span id="sBestLvl">M</span>)</span></div>
         </div>
 
         <div style="padding-top:14px;border-top:1px solid var(--bd)">
@@ -837,7 +799,7 @@
           <div class="tech-divider">
             <div class="sec-label"><span>Technical Details (Finite Field &amp; Polynomial Math)</span></div>
             <p>
-              Before printing, each group's message bytes are treated as coefficients of a polynomial over the finite field <strong>GF(256)</strong> (modulo primitive polynomial <code style="background:var(--elev);padding:1px 5px;border-radius:4px">0x11D</code>). Dividing by a generator polynomial produces the amber backup bytes (the remainder). Because each unknown error has two unknowns (its <em>byte position</em> and its <em>XOR bit-flip value</em>), <em>n</em> backup bytes yield <em>n</em> syndrome equations and can repair up to ⌊n/2⌋ damaged bytes using <strong>Berlekamp–Massey</strong>, <strong>Chien search</strong>, and <strong>Forney's algorithm</strong>.
+              Before printing, each group's message bytes are treated as coefficients of a polynomial over the finite field <strong>GF(256)</strong> (modulo primitive polynomial <code style="background:var(--elev);padding:1px 5px;border-radius:4px">0x11D</code>). Dividing by a generator polynomial produces the amber backup bytes (the remainder). Because each unknown error has two unknowns (its <em>byte position</em> and its <em>XOR bit-flip value</em>), <em>n</em> backup bytes yield <em>n</em> syndrome equations and can repair up to ⌊n/2⌋ damaged bytes using <strong>Berlekamp–Massey</strong>, <strong>Chien search</strong>, and <strong>Forney's algorithm</strong> implemented without libraries in <a href="qr_engine.py" class="src" target="_blank" rel="noopener">qr_engine.py</a>.
             </p>
           </div>
 
@@ -904,7 +866,6 @@
     let apiEncode, apiDecode, enc, size, orig, types, cwmap, cwMods, damage, eff, dec;
     let cwHit = [], blockHits = [], hoverPt = null, painting = false, last = null, pending = false, jt;
     let presetResults = {};
-    const best = { L: 0, M: 0, Q: 0, H: 0 };
     const done = {}, presetsUsed = {};
     const hex = v => v.toString(16).padStart(2, '0').toUpperCase();
     const MK = [
@@ -983,7 +944,7 @@
       const label = t => { $('#engineLabel').textContent = t; };
       const CDN = 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/';
       try {
-        label('Loading Python…');
+        label('Loading Python (about 10 MB, first visit only)…');
         $('#why').textContent = 'The page is downloading its own Python engine. When it is ready, a coffee spill appears on the code and the decoder repairs it.';
         let py;
         try {
@@ -1002,7 +963,7 @@
         apiDecode = py.globals.get('api_decode');
 
         $('#engineDot').classList.add('ready');
-        $('#engineLabel').textContent = '';
+        $('#engineLabel').textContent = 'qr_engine.py ready';
         $('#dragHint').textContent = 'Drag anywhere on the code to spill coffee';
 
         // Independent cross-check library: optional, never blocks the page.
@@ -1052,7 +1013,6 @@
       $('#heroStat').innerHTML = `Right now this code holds <strong>${r.payload_bytes} bytes of message</strong> and <strong>${ecN} bytes of repair data</strong>, enough to rebuild about <strong>${fixN} damaged bytes</strong> (${(fixN / r.origin.length * 100).toFixed(0)}% of the code).`;
 
       styleControls();
-      $('#sBestLvl').textContent = S.level;
       drawMasks();
       update();
       return true;
@@ -1320,14 +1280,6 @@
     $('#pCorner').onclick = () => preset('corner');
     $('#pReset').onclick = () => preset('reset');
 
-    $('#phoneScanBtn').onclick = () => {
-      if (!enc) return;
-      for (const id of ['#oFixed', '#oRebuilt', '#oAnat', '#oBytes']) $(id).checked = false;
-      $('#legend').style.display = 'none';
-      hoverPt = null;
-      render();
-    };
-
     // Diagnostics Panel (Plain English on main screen)
     const coverPct = () => damage.reduce((a, d) => a + (d ? 1 : 0), 0) / (size * size) * 100;
     function panel() {
@@ -1336,14 +1288,11 @@
       const nFix = dec.blocks ? dec.blocks.reduce((a, b) => a + b.positions.length, 0) : 0;
       const wrong = dec.ok && dec.text !== S.text;
       const pass = dec.ok && !wrong;
-      const bytePct = nHit / enc.origin.length * 100;
       const falseRepair = !pass && !!dec.blocks && dec.blocks.some((k, b) => {
         if (k.status === 'failed') return false;
         const o = enc.blocks[b].data.concat(enc.blocks[b].ec);
         return k.corrected.some((v, i) => v !== o[i]);
       });
-
-      if (pass) best[S.level] = Math.max(best[S.level], bytePct);
 
       let why;
       if (dec.stage === 'locate') {
@@ -1401,7 +1350,6 @@
 
       $('#sCover').textContent = cov.toFixed(1) + '%';
       $('#sBytes').textContent = `${nHit}/${enc.origin.length}`;
-      $('#sBest').textContent = best[S.level].toFixed(1) + '%';
 
       $('#blocks').innerHTML = enc.blocks.map((b, i) => {
         const can = b.ec.length >> 1, h = blockHits[i];
