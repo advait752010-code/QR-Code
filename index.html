@@ -944,7 +944,7 @@
       const label = t => { $('#engineLabel').textContent = t; };
       const CDN = 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/';
       try {
-        label('Loading Python (about 10 MB, first visit only)…');
+        label('Loading Python…');
         $('#why').textContent = 'The page is downloading its own Python engine. When it is ready, a coffee spill appears on the code and the decoder repairs it.';
         let py;
         try {
