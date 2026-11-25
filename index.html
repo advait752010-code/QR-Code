@@ -691,18 +691,17 @@
               <button id="pBlob">Same 8% as one blob</button>
               <button id="pLogo">Stick a logo on it</button>
               <button id="pCorner">Nick a corner</button>
-              <button id="pReset">Reset</button>
+            </div>
+            <div class="chk-row" style="margin-top:8px">
+              <div class="chk-group">
+                <label><input type="checkbox" id="oFixed" checked> Repaired bytes</label>
+                <label><input type="checkbox" id="oRebuilt"> Preview rebuilt code</label>
+                <label><input type="checkbox" id="oAnat"> Color map</label>
+                <label><input type="checkbox" id="oBytes"> Byte boxes</label>
+              </div>
+              <button id="pReset" style="background:var(--elev);font-size:12px;padding:6px 10px">Reset</button>
             </div>
             <div id="cmp" class="cmp" aria-live="polite"></div>
-          </div>
-
-          <div class="chk-row">
-            <div class="chk-group">
-              <label><input type="checkbox" id="oFixed" checked> Repaired bytes</label>
-              <label><input type="checkbox" id="oRebuilt"> Preview rebuilt code</label>
-              <label><input type="checkbox" id="oAnat"> Color map</label>
-              <label><input type="checkbox" id="oBytes"> Byte boxes</label>
-            </div>
           </div>
 
           <div class="legend" id="legend">
