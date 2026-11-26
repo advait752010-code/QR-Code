@@ -778,26 +778,26 @@
 
     <!-- Progressive Disclosure Accordions -->
     <section class="deep-dive">
-      <!-- Accordion 1: Plain-English Opening + Technical Details + Live Trace -->
+      <!-- Accordion 1: Repair Analysis -->
       <details class="acc" id="dBytes" open>
-        <summary>How the Repair Works: Live Step-by-Step Trace &amp; Codeword Bytes</summary>
+        <summary>Repair Analysis</summary>
         <div class="acc-body">
           <p>
-            Every 8 squares inside the data area form one byte. Your message is stored in <strong>blue message bytes</strong>, followed by <strong>amber backup bytes</strong> calculated from your message so a scanner can detect which bytes changed and reconstruct their original values.
+            Every 8 squares in the data area make up one byte. Your message is stored in the <strong>blue bytes</strong>. The <strong>amber bytes</strong> after them are backup bytes worked out from your message. A scanner uses them to spot which bytes were changed and to figure out what they used to be.
           </p>
 
           <div class="tech-divider">
-            <div class="sec-label"><span>Technical Details (Finite Field &amp; Polynomial Math)</span></div>
+            <div class="sec-label"><span>The math behind it</span></div>
             <p>
-              Before printing, each group's message bytes are treated as coefficients of a polynomial over the finite field <strong>GF(256)</strong> (modulo primitive polynomial <code style="background:var(--elev);padding:1px 5px;border-radius:4px">0x11D</code>). Dividing by a generator polynomial produces the amber backup bytes (the remainder). Because each unknown error has two unknowns (its <em>byte position</em> and its <em>XOR bit-flip value</em>), <em>n</em> backup bytes yield <em>n</em> syndrome equations and can repair up to ⌊n/2⌋ damaged bytes using <strong>Berlekamp–Massey</strong>, <strong>Chien search</strong>, and <strong>Forney's algorithm</strong>.
+              Before the code is printed, each group's message bytes are treated as the coefficients of a polynomial over the finite field <strong>GF(256)</strong>, built with the polynomial <code style="background:var(--elev);padding:1px 5px;border-radius:4px">0x11D</code>. Dividing it by a fixed generator polynomial leaves a remainder, and that remainder becomes the amber backup bytes. Every damaged byte has two unknowns: <em>where it is</em> and <em>which bits were flipped</em>. So <em>n</em> backup bytes give <em>n</em> equations (called syndromes), which is enough to fix up to ⌊n/2⌋ damaged bytes. The decoder solves them with <strong>Berlekamp–Massey</strong>, <strong>Chien search</strong> and <strong>Forney's algorithm</strong>.
             </p>
           </div>
 
-          <div class="sec-label" style="margin-top:14px"><span>Live Algebraic Repair Trace</span></div>
+          <div class="sec-label" style="margin-top:14px"><span>Repair, step by step (live)</span></div>
           <div id="rep"></div>
 
-          <div class="sec-label" style="margin-top:16px"><span>Live Codeword Bytes (Blue = Message, Amber = Backup)</span></div>
-          <p style="font-size:12.5px">Red border = damaged by spill. Green ring = restored. Hover any byte to compare before and after.</p>
+          <div class="sec-label" style="margin-top:16px"><span>Every byte in this code (blue = message, amber = backup)</span></div>
+          <p style="font-size:12.5px">A red border means the spill damaged that byte. A green ring means it was repaired. Hover over a byte to see its value before and after.</p>
           <div id="byteView"></div>
         </div>
       </details>
@@ -810,7 +810,7 @@
             <strong>Corner targets have 0 backup data.</strong> The three squares in the corners tell your phone camera where the QR code is, its scale, and its orientation by the stripe ratio. Because they hold no message bytes, error correction cannot rebuild them if scratched out.
           </p>
           <p>
-            <strong>Why scattered speckles hurt more than concentrated damage.</strong> Error correction counts damage in whole 8-bit bytes, not individual pixels. Damage concentrated in one area destroys a few bytes completely, whereas the same area scattered ruins multiple bytes and exhausts the repair byte budget.
+            <strong>Scattered speckles do more harm than one big spill.</strong> Error correction counts damage in whole 8-bit bytes, not individual pixels. Damage concentrated in one area destroys a few bytes completely, whereas the same area scattered ruins multiple bytes and exhausts the repair byte budget.
           </p>
         </div>
       </details>
@@ -1357,7 +1357,7 @@
     function renderRepairTrace() {
       const el = $('#rep');
       if (!dec.blocks) {
-        el.innerHTML = '<p>The scanner halted at corner/settings detection before reaching data bytes. Spill coffee in the center of the code to watch live algebraic repair.</p>';
+        el.innerHTML = '<p>The scanner stopped before it reached the data bytes, because it could not find the corners or read the settings. Spill coffee in the middle of the code to watch a repair happen.</p>';
         return;
       }
       let bi = dec.blocks.findIndex(k => k.status !== 'clean');
@@ -1369,19 +1369,19 @@
       const chip = s => `<span class="byte-chip mono ${s ? '' : 'byte-d'}" style="${s ? 'background:#e11d48' : ''}">${hex(s)}</span>`;
       const zero = k.syndromes.every(s => !s);
 
-      let html = `<p>Showing <strong>Group ${bi + 1}</strong>${dec.blocks.length > 1 ? ' (first group with activity)' : ''}:</p><ol style="padding-left:20px;margin:0">`;
-      html += `<li style="margin-bottom:8px"><strong>1. Compute Syndromes:</strong> Evaluates the received polynomial at ${k.ec_len} generator roots: ${k.syndromes.map(chip).join('')}<br>${zero ? 'All 00 → zero detectable errors in this group.' : 'Non-zero syndromes (red) prove corruption and encode both locations and magnitudes.'}</li>`;
+      let html = `<p>Showing <strong>Group ${bi + 1}</strong>${dec.blocks.length > 1 ? ' (the first damaged group)' : ''}:</p><ol style="padding-left:20px;margin:0">`;
+      html += `<li style="margin-bottom:8px"><strong>Check the syndromes.</strong> The scanner tests the bytes it read against ${k.ec_len} values: ${k.syndromes.map(chip).join('')}<br>${zero ? 'They are all 00, so nothing in this group is damaged.' : 'Anything that is not 00 (red) means something is damaged. Together, these values hold where the damage is and what it did.'}</li>`;
 
       if (k.status === 'failed') {
-        html += `<li><strong>2. Budget Exceeded:</strong> Solving for <em>e</em> unknown errors requires 2<em>e</em> syndromes. With ${k.ec_len} syndromes, at most ${k.can_fix} damaged bytes can be uniquely solved, so the decoder stops rather than guessing (though extreme damage can rarely mimic another valid message).</li>`;
+        html += `<li><strong>Too much damage.</strong> Fixing <em>e</em> damaged bytes takes 2<em>e</em> syndromes. With ${k.ec_len} syndromes, this group can fix at most ${k.can_fix} bytes, so the decoder gives up instead of guessing. (Very heavy damage can occasionally look like a different valid message.)</li>`;
       } else if (k.status === 'fixed' && t) {
-        html += `<li style="margin-bottom:8px"><strong>2. Berlekamp–Massey + Chien Search (Locate):</strong> Constructed an error-locator polynomial of degree <strong>${t.positions.length}</strong> whose roots pinpoint: <strong>${t.positions.map(nameOf).join(', ')}</strong>.</li>`;
-        html += `<li style="margin-bottom:8px"><strong>3. Forney's Algorithm (Recover Value):</strong> Computes each bit-flip mask so <code class="mono">Read ⊕ Error = Original</code>:<table class="trace-tbl"><thead><tr><th>Byte</th><th>Read</th><th>Error</th><th>Rebuilt</th></tr></thead><tbody>` +
+        html += `<li style="margin-bottom:8px"><strong>Find the damaged bytes (Berlekamp–Massey + Chien search).</strong> The decoder builds an error-locator polynomial of degree <strong>${t.positions.length}</strong>. Its roots point to: <strong>${t.positions.map(nameOf).join(', ')}</strong>.</li>`;
+        html += `<li style="margin-bottom:8px"><strong>Work out the right values (Forney's algorithm).</strong> For each damaged byte it finds which bits were flipped, so that <code class="mono">Read ⊕ Error = Original</code>:<table class="trace-tbl"><thead><tr><th>Byte</th><th>Read</th><th>Error</th><th>Rebuilt</th></tr></thead><tbody>` +
           t.positions.map((p, idx) => {
             const r = k.read[p], e = t.values[idx], o = r ^ e;
-            return `<tr><td>${nameOf(p)}</td><td class="mono">${hex(r)}</td><td class="mono">${hex(e)}</td><td class="mono">${hex(o)} ${o === origBlk[p] ? '<span style="color:var(--ok-tx);font-weight:700">✓ verified</span>' : ''}</td></tr>`;
+            return `<tr><td>${nameOf(p)}</td><td class="mono">${hex(r)}</td><td class="mono">${hex(e)}</td><td class="mono">${hex(o)} ${o === origBlk[p] ? '<span style="color:var(--ok-tx);font-weight:700">✓ correct</span>' : ''}</td></tr>`;
           }).join('') + `</tbody></table></li>`;
-        html += `<li><strong>4. Syndrome Recheck:</strong> Re-evaluating the repaired group yields all 00 syndromes, confirming mathematical consistency.</li>`;
+        html += `<li><strong>Check again.</strong> Running the syndromes on the repaired group gives all 00s, so the repair holds up.</li>`;
       }
       el.innerHTML = html + '</ol>';
     }
