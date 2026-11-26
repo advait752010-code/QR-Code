@@ -39,8 +39,8 @@
       --bad-bd: #fda4af;
       --bad-tx: #9f1239;
       --neu-bg: #eef1f7;
-      --ins-bg: #14182b;
-      --ins-tx: #e6e8f0;
+      --ins-bg: var(--ac-soft);
+      --ins-tx: var(--tx);
       --shadow: 0 4px 16px -2px rgba(20, 24, 43, 0.06), 0 1px 3px rgba(20, 24, 43, 0.04);
     }
 
@@ -487,12 +487,12 @@
     #insight {
       background: var(--ins-bg);
       color: var(--ins-tx);
-      border: 1px solid var(--bd);
+      border: 1px solid var(--ac-bd);
       border-radius: 12px;
       padding: 14px 16px;
       font-size: 14px;
     }
-    #insight strong { color: #ffffff; }
+    #insight strong { color: var(--tx); }
 
     /* Accordions */
     .deep-dive { margin-top: 22px; display: flex; flex-direction: column; gap: 12px; }
