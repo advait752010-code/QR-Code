@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Spill-Proof QR: How Damaged QR Codes Still Scan</title>
+  <title>Coffee-Stained QR — How Damaged QR Codes Still Scan</title>
   <meta name="description" content="Spill coffee on a live QR code and watch a from-scratch Python decoder rebuild what was destroyed.">
 
   <script>
@@ -98,9 +98,16 @@
     .hero-top {
       display: flex;
       align-items: center;
-      justify-content: flex-end;
+      justify-content: space-between;
       gap: 12px;
       margin-bottom: 10px;
+    }
+    .project-tag {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--ac);
     }
     #themeToggle {
       width: 34px;
@@ -634,6 +641,7 @@
   <header class="hero">
     <div class="wrap">
       <div class="hero-top">
+        <span class="project-tag">Coffee-Stained QR</span>
         <button id="themeToggle" type="button" aria-label="Toggle dark or light theme"></button>
       </div>
       <h1>Spill coffee on a QR code. Why does it still scan?</h1>
