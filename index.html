@@ -675,7 +675,46 @@
               Brush <input type="range" id="bsize" min="1" max="5" value="2" style="width:88px">
             </label>
           </div>
+        </div>
+      </section>
 
+      <!-- Right Column: Live Decoder Output -->
+      <section class="card" aria-label="Scanner diagnostics">
+        <div class="sec-label">
+          <span>Live Decoder Result</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;text-transform:none;font-weight:600">
+            <i class="status-dot" id="engineDot"></i>
+            <span id="engineLabel">Starting Python engine…</span>
+          </span>
+        </div>
+
+        <div id="verdictBox">
+          <div class="verdict-head" aria-live="polite">
+            <div id="verdictTitle">Starting Python decoder…</div>
+          </div>
+          <div id="decoded" class="mono">…</div>
+          <p id="why">Loading our from-scratch repair decoder written in Python (running in your browser)…</p>
+        </div>
+
+        <div style="margin-top:16px">
+          <div class="sec-label"><span>How Your Phone Reads It (5 Steps)</span></div>
+          <div class="pipe-grid" id="pipe"></div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card"><b id="sCover" class="mono">0.0%</b><span>Area painted</span></div>
+          <div class="stat-card"><b id="sBytes" class="mono">0</b><span>Bytes damaged</span></div>
+        </div>
+
+        <div style="padding-top:14px;border-top:1px solid var(--bd)">
+          <div class="sec-label">
+            <span>Repair Budget per Group</span>
+            <span>1 box = 1 byte</span>
+          </div>
+          <div id="blocks"></div>
+        </div>
+
+        <div class="toolbar">
           <div>
             <div class="sec-label"><span>Quick Damage Scenarios</span></div>
             <div class="preset-row">
@@ -720,43 +759,6 @@
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      <!-- Right Column: Live Decoder Output -->
-      <section class="card" aria-label="Scanner diagnostics">
-        <div class="sec-label">
-          <span>Live Decoder Result</span>
-          <span style="display:inline-flex;align-items:center;gap:6px;text-transform:none;font-weight:600">
-            <i class="status-dot" id="engineDot"></i>
-            <span id="engineLabel">Starting Python engine…</span>
-          </span>
-        </div>
-
-        <div id="verdictBox">
-          <div class="verdict-head" aria-live="polite">
-            <div id="verdictTitle">Starting Python decoder…</div>
-          </div>
-          <div id="decoded" class="mono">…</div>
-          <p id="why">Loading our from-scratch repair decoder written in Python (running in your browser)…</p>
-        </div>
-
-        <div style="margin-top:16px">
-          <div class="sec-label"><span>How Your Phone Reads It (5 Steps)</span></div>
-          <div class="pipe-grid" id="pipe"></div>
-        </div>
-
-        <div class="stats-grid">
-          <div class="stat-card"><b id="sCover" class="mono">0.0%</b><span>Area painted</span></div>
-          <div class="stat-card"><b id="sBytes" class="mono">0</b><span>Bytes damaged</span></div>
-        </div>
-
-        <div style="padding-top:14px;border-top:1px solid var(--bd)">
-          <div class="sec-label">
-            <span>Repair Budget per Group</span>
-            <span>1 box = 1 byte</span>
-          </div>
-          <div id="blocks"></div>
         </div>
 
       </section>
