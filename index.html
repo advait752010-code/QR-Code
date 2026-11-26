@@ -89,40 +89,34 @@
 
     .wrap { max-width: 1180px; margin: 0 auto; padding: 0 18px; }
 
-    /* Hero Header */
+/* Hero Header */
     header.hero {
       background: var(--card);
       border-bottom: 1px solid var(--bd);
-      padding: 20px 0 22px;
-    }
-    .hero-top {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 12px;
-      margin-bottom: 10px;
-    }
-    .project-tag {
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--ac);
+      padding: 26px 0 24px;
     }
     #themeToggle {
-      width: 34px;
-      height: 34px;
+      position: fixed;
+      right: 18px;
+      bottom: 68px;
+      z-index: 30;
+      width: 42px;
+      height: 42px;
       border-radius: 999px;
-      border: 1px solid var(--bd);
-      background: var(--elev);
-      color: var(--mu);
+      border: 1px solid var(--bd-strong);
+      background: var(--card);
+      color: var(--tx);
+      box-shadow: var(--shadow);
       display: inline-flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       transition: background-color 0.15s ease, transform 0.15s ease;
     }
-    #themeToggle:hover { background: var(--hover); color: var(--tx); transform: scale(1.04); }
+    @media (min-width: 940px) {
+      #themeToggle { bottom: 20px; right: 20px; }
+    }
+    #themeToggle:hover { background: var(--hover); transform: scale(1.06); }
 
     h1 {
       font-size: clamp(23px, 3.8vw, 33px);
@@ -638,11 +632,10 @@
 </head>
 <body>
 
+  <button id="themeToggle" type="button" aria-label="Toggle dark or light theme"></button>
+
   <header class="hero">
     <div class="wrap">
-      <div class="hero-top">
-        <button id="themeToggle" type="button" aria-label="Toggle dark or light theme"></button>
-      </div>
       <h1>Spill coffee on a QR code. Why does it still scan?</h1>
       <p class="lead">
         A large share of a QR code isn't your message. It is <strong>extra repair data calculated from your message</strong>. A scanner can rebuild up to 7–30% of the code's bytes, depending on the setting, and it is never told where the damage is.
