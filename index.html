@@ -920,7 +920,7 @@
       const label = t => { $('#engineLabel').textContent = t; };
       const CDN = 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/';
       try {
-        label('Loading Python…');
+        label('Loading Python');
         $('#why').textContent = 'The page is downloading its own Python engine. When it is ready, a coffee spill appears on the code and the decoder repairs it.';
         let py;
         try {
@@ -930,7 +930,7 @@
           if (typeof loadPyodide !== 'function') await loadScript(CDN + 'pyodide.js');
           py = await loadPyodide({ indexURL: CDN });
         }
-        label('Starting decoder…');
+        label('Starting decoder');
         const res = await fetch('qr_engine.py');
         if (!res || !res.ok) throw new Error('qr_engine.py could not be loaded');
         document.querySelectorAll('a.src').forEach(a => a.href = 'qr_engine.py');
