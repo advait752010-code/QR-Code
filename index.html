@@ -684,41 +684,7 @@
               <button id="pLogo">Stick a logo on it</button>
               <button id="pCorner">Nick a corner</button>
             </div>
-            <div class="chk-row" style="margin-top:8px">
-              <div class="chk-group">
-                <label><input type="checkbox" id="oFixed" checked> Repaired bytes</label>
-                <label><input type="checkbox" id="oRebuilt"> Preview rebuilt code</label>
-                <label><input type="checkbox" id="oAnat"> Color map</label>
-                <label><input type="checkbox" id="oBytes"> Byte boxes</label>
-              </div>
-              <button id="pReset" style="background:var(--elev);font-size:12px;padding:6px 10px">Reset</button>
-            </div>
             <div id="cmp" class="cmp" aria-live="polite"></div>
-          </div>
-
-          <div class="legend" id="legend">
-            <span><i style="background:#e5484d"></i>Corner targets</span>
-            <span><i style="background:#8e4ec6"></i>Timing rulers</span>
-            <span><i style="background:#d6409f"></i>Tilt anchor</span>
-            <span><i style="background:#f5a524"></i>Settings strips</span>
-            <span><i style="background:#4f46e5"></i>Your message</span>
-            <span><i style="background:#d97706"></i>Backup repair bytes</span>
-          </div>
-
-          <!-- Protection Level Below Toolbar -->
-          <div class="encode-settings">
-            <div>
-              <div class="sec-label">
-                <span>Backup Protection Level</span>
-                <span>More backup = larger grid</span>
-              </div>
-              <div class="lv-grid" id="levels" role="group" aria-label="Error correction level">
-                <button class="lv-btn" data-l="L">Low (L)<small>repairs ≈7% of bytes</small></button>
-                <button class="lv-btn" data-l="M">Medium (M)<small>repairs ≈15% of bytes</small></button>
-                <button class="lv-btn" data-l="Q">High (Q)<small>repairs ≈25% of bytes</small></button>
-                <button class="lv-btn" data-l="H">Max (H)<small>repairs ≈30% of bytes</small></button>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -757,6 +723,40 @@
             <span>1 box = 1 byte</span>
           </div>
           <div id="blocks"></div>
+        </div>
+
+        <div class="encode-settings" style="margin-top:14px">
+          <div class="chk-row">
+            <div class="chk-group">
+              <label><input type="checkbox" id="oFixed" checked> Repaired bytes</label>
+              <label><input type="checkbox" id="oRebuilt"> Preview rebuilt code</label>
+              <label><input type="checkbox" id="oAnat"> Color map</label>
+              <label><input type="checkbox" id="oBytes"> Byte boxes</label>
+            </div>
+            <button id="pReset" style="background:var(--elev);font-size:12px;padding:6px 10px">Reset</button>
+          </div>
+
+          <div class="legend" id="legend">
+            <span><i style="background:#e5484d"></i>Corner targets</span>
+            <span><i style="background:#8e4ec6"></i>Timing rulers</span>
+            <span><i style="background:#d6409f"></i>Tilt anchor</span>
+            <span><i style="background:#f5a524"></i>Settings strips</span>
+            <span><i style="background:#4f46e5"></i>Your message</span>
+            <span><i style="background:#d97706"></i>Backup repair bytes</span>
+          </div>
+
+          <div>
+            <div class="sec-label">
+              <span>Backup Protection Level</span>
+              <span>More backup = larger grid</span>
+            </div>
+            <div class="lv-grid" id="levels" role="group" aria-label="Error correction level">
+              <button class="lv-btn" data-l="L">Low (L)<small>repairs ≈7% of bytes</small></button>
+              <button class="lv-btn" data-l="M">Medium (M)<small>repairs ≈15% of bytes</small></button>
+              <button class="lv-btn" data-l="Q">High (Q)<small>repairs ≈25% of bytes</small></button>
+              <button class="lv-btn" data-l="H">Max (H)<small>repairs ≈30% of bytes</small></button>
+            </div>
+          </div>
         </div>
 
       </section>
