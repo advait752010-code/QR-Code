@@ -323,12 +323,15 @@
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
+      gap: 6px;
       font-size: 12px;
       color: var(--mu);
     }
-    .chk-group { display: flex; flex-wrap: wrap; gap: 8px 14px; }
-    .chk-group label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500; }
+    @media (min-width: 940px) {
+      .chk-row { flex-wrap: nowrap; }
+    }
+    .chk-group { display: flex; flex-wrap: wrap; gap: 6px 10px; }
+    .chk-group label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font-weight: 500; white-space: nowrap; }
     .chk-group input { accent-color: var(--ac); }
 
     .legend {
