@@ -668,26 +668,15 @@
         <div class="toolbar">
           <div class="row-between">
             <div class="seg" id="toolSeg" role="group" aria-label="Brush">
-              <button data-t="coffee">Coffee</button>
-              <button data-t="repair">Eraser</button>
+              <button data-t="coffee">☕ Coffee (dark)</button>
+              <button data-t="white">🩹 Scratch (white)</button>
+              <button data-t="repair">🧽 Wipe clean</button>
             </div>
             <label style="font-size:12px;font-weight:600;color:var(--mu);display:inline-flex;align-items:center;gap:8px">
               Brush <input type="range" id="bsize" min="1" max="5" value="2" style="width:88px">
             </label>
           </div>
-
-          <div>
-            <div class="sec-label"><span>Quick Damage Scenarios</span></div>
-            <div class="preset-row">
-              <button id="pSpeck">Scatter 8% speckles</button>
-              <button id="pBlob">Same 8% as one blob</button>
-              <button id="pLogo">Stick a logo on it</button>
-              <button id="pCorner">Nick a corner</button>
-            </div>
-            <div id="cmp" class="cmp" aria-live="polite"></div>
-          </div>
         </div>
-      </section>
 
       <!-- Right Column: Live Decoder Output -->
       <section class="card" aria-label="Scanner diagnostics">
@@ -726,6 +715,17 @@
         </div>
 
         <div class="encode-settings" style="margin-top:14px">
+          <div>
+            <div class="sec-label"><span>Quick Damage Scenarios</span></div>
+            <div class="preset-row">
+              <button id="pSpeck">Scatter 8% speckles</button>
+              <button id="pBlob">Same 8% as one blob</button>
+              <button id="pLogo">Stick a logo on it</button>
+              <button id="pCorner">Nick a corner</button>
+            </div>
+            <div id="cmp" class="cmp" aria-live="polite"></div>
+          </div>
+
           <div class="chk-row">
             <div class="chk-group">
               <label><input type="checkbox" id="oFixed" checked> Repaired bytes</label>
